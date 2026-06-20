@@ -54,3 +54,11 @@ def filter_field(value):
     if not value:
         return ""
     return str(value).replace("_", " ").title()
+
+@register.filter(name="base64_encode")
+def base64_encode(value):
+    return ""
+
+@register.filter(name="fk_history")
+def fk_history(value, arg):
+    return ""

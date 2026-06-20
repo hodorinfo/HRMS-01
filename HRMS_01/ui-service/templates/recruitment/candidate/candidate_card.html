@@ -10,6 +10,24 @@
     .profile-picture:hover {
         transform: scale(2.4);
     }
+    
+    /* Glassmorphic Kanban Card Styles */
+    .oh-kanban-card {
+        background: rgba(255, 255, 255, 0.45) !important;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .oh-kanban-card:hover {
+        background: rgba(255, 255, 255, 0.7) !important;
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    }
 </style>
 
 {% include 'filter_tags.html' %}
@@ -37,7 +55,7 @@
         "
     >
         <a
-            href="/recruitment/candidate-view/"
+            href="{% url 'candidate-view-individual' cand.id %}"
             style="color: inherit; text-decoration: none; display: flex"
         >
 
@@ -112,7 +130,7 @@
                             {% if not cand.start_onboard and perms.recruitment.change_candidate %}
                             <li class="oh-dropdown__item">
                                 <a
-                                    href="/recruitment/candidate-conversion/"
+                                    href="{% url 'candidate-conversion' cand.id %}"
                                     onclick="return confirm('{% trans "Are you sure you want to convert this candidate into an employee?" %}')"
                                     style="text-decoration: none"
                                 >
@@ -124,7 +142,9 @@
                             <li class="oh-dropdown__item">
                                 <a
                                     data-toggle="oh-modal-toggle"
-                                    data-target="#createModal"#""
+                                    data-target="#createModal"
+                                    to-skill-zone' cand.id %}"
+                                    
                                     >{% trans "Add to Skill Zone" %}</a
                                 >
                             </li>
@@ -134,9 +154,12 @@
                                 <li class="oh-dropdown__item">
                                     <a
                                         class="oh-dropdown__link oh-dropdown__link--secondary"
+                                        
+                                        
                                         class="oh-btn oh-btn--light"
                                         data-toggle="oh-modal-toggle"
-                                        data-target="#createModal"#"?candidate_id={{cand.id}}"
+                                        data-target="#createModal"
+                                        add-to-rejected-candidates' %}?candidate_id={{cand.id}}"
                                         {% if cand.is_offer_rejected %}
                                             title="{% trans "Added In Rejected Candidates" %}"
                                         {% else %}
@@ -157,7 +180,7 @@
                             {% if perms.recruitment.view_candidate or request.user|is_stagemanager %}
                                 <li class="oh-dropdown__item">
                                     <a
-                                        href=""#""
+                                        href="{% url 'candidate-self-status-tracking' cand.id %}"
                                         class="oh-dropdown__link"
                                         >{% trans "View candidate self tracking" %}</a
                                     >
@@ -167,10 +190,12 @@
                         {% if check_candidate_self_tracking %}
                             {% if perms.recruitment.change_candidate or perms.recruitment.add_candidatedocumentrequest or request.user|is_stagemanager %}
                                 <li class="oh-dropdown__item">
-                                    <a href="#?candidate_id={{cand.id}}"
+                                    <a
+                                        candidate-document-request' %}?candidate_id={{cand.id}}"
                                         class="oh-dropdown__link"
                                         data-toggle="oh-modal-toggle"
                                         data-target="#objectCreateModal"
+                                        
                                     >
                                         {% trans "Request Document" %}
                                     </a>
@@ -180,7 +205,7 @@
                         {% if perms.recruitment.change_candidate %}
                             <li class="oh-dropdown__item">
                                 <a
-                                    href="/recruitment/candidate-update/"
+                                    href="{% url 'rec-candidate-update' cand.id %}"
                                     class="oh-dropdown__link"
                                     >{% trans "Edit Profile" %}</a
                                 >
@@ -190,7 +215,7 @@
                             {% if cand.is_active %}
                                 <li class="oh-dropdown__item">
                                     <a
-                                        href="/recruitment/candidate-archive/"
+                                        href="{% url 'rec-candidate-archive' cand.id %}"
                                         onclick="return confirm('{% trans "Do you want to archive this candidate?" %}')"
                                         class="oh-dropdown__link"
                                         >{% trans "Archive" %}</a
@@ -199,7 +224,7 @@
                             {% else %}
                                 <li class="oh-dropdown__item">
                                     <a
-                                        href="/recruitment/candidate-archive/"
+                                        href="{% url 'rec-candidate-archive' cand.id %}"
                                         onclick="return confirm('{% trans "Do you want to un-archive this candidate?" %}')"
                                         class="oh-dropdown__link"
                                         >{% trans "Un-Archive" %}</a
@@ -210,7 +235,7 @@
                         {% if perms.recruitment.delete_candidate %}
                             <li class="oh-dropdown__item">
                                 <form
-                                    action=""/recruitment/candidate-delete/""
+                                    action="{% url 'rec-candidate-delete' cand.id %}"
                                     onsubmit="return confirm('{% trans "Do you want to delete this candidate?" %}')"
                                     method="post"
                                 >
@@ -250,7 +275,9 @@
                 type="number"
                 name="page"
                 class="oh-pagination__input"
-                value="{{data.number}}"/recruitment/search-candidate"?{{pd}}&view=card"
+                value="{{data.number}}"
+                search-candidate' %}?{{pd}}&view=card"
+                
                 min="1"
             />
             <span class="oh-pagination__label"
@@ -261,26 +288,34 @@
         <ul class="oh-pagination__items">
             {% if data.has_previous %}
             <li class="oh-pagination__item oh-pagination__item--wide">
-                <a/recruitment/search-candidate"?{{pd}}&page=1&view=card"
+                <a
+                    
+                    search-candidate' %}?{{pd}}&page=1&view=card"
                     class="oh-pagination__link"
                     >{% trans "First" %}</a
                 >
             </li>
             <li class="oh-pagination__item oh-pagination__item--wide">
-                <a/recruitment/search-candidate"?{{pd}}&page={{ data.previous_page_number }}&view=card"
+                <a
+                    
+                    search-candidate' %}?{{pd}}&page={{ data.previous_page_number }}&view=card"
                     class="oh-pagination__link"
                     >{% trans "Previous" %}</a
                 >
             </li>
             {% endif %} {% if data.has_next %}
             <li class="oh-pagination__item oh-pagination__item--wide">
-                <a/recruitment/search-candidate"?{{pd}}&page={{ data.next_page_number }}&view=card"
+                <a
+                    
+                    search-candidate' %}?{{pd}}&page={{ data.next_page_number }}&view=card"
                     class="oh-pagination__link"
                     >{% trans "Next" %}</a
                 >
             </li>
             <li class="oh-pagination__item oh-pagination__item--wide">
-                <a/recruitment/search-candidate"?{{pd}}&page={{ data.paginator.num_pages }}&view=card"
+                <a
+                    
+                    search-candidate' %}?{{pd}}&page={{ data.paginator.num_pages }}&view=card"
                     class="oh-pagination__link"
                     >{% trans "Last" %}</a
                 >

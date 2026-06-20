@@ -24,9 +24,7 @@
     </span>
 </div>
 <div class="oh-modal__dialog-body">
-    <form/recruitment/skill-zone-update/" {% else %} "/recruitment/skill-zone-create" {% endif %}"
-        id="skillform" hx-encoding="multipart/form-data" class="oh-profile-section"
-        >
+    <form id="skillform" class="oh-profile-section" action="{% if form.instance.id %}{% url 'skill-zone-update' sz_id %}{% else %}{% url 'skill-zone-create' %}{% endif %}" method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <div class="oh-modal__dialog-footer p-0 mt-3">

@@ -1,34 +1,61 @@
 {% extends 'index.html' %}
-{% load i18n %}
-{% load static %}
-{% load recruitmentfilters %} {% block content %} {% load static i18n horillafilters mathfilters recruitmentfilters %}
+{% load basefilters i18n static horillafilters recruitmentfilters mathfilters %}
+{% block content %}
 <style>
-	.oh-card-dashboard{
-		height: 100;
+	.oh-card-dashboard {
+		height: 100%;
+        background: rgba(255, 255, 255, 0.45) !important;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07) !important;
+        border-radius: 16px !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        overflow: hidden;
 	}
-    .done-task{
-        background-color: #9acd322e !important;
+    .oh-card-dashboard:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.65) !important;
     }
-    .scheduled-task{
-        background-color: #00afff2e !important;
+    .oh-card-dashboard__header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+        background: transparent !important;
     }
-    .ongoing-task{
-        background-color: #e6ff002e !important;
+    .oh-card-dashboard__title {
+        font-weight: 600 !important;
+        color: #2c3e50 !important;
+        letter-spacing: 0.3px;
     }
-    .stuck-task{
-        background-color: #ff45003b !important;
+    .oh-card-dashboard__count {
+        background: linear-gradient(135deg, #3498db, #8e44ad);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        font-size: 2.2rem;
     }
-    .todo-task{
-        background-color: #8d8d8d2e !important;
-    }
-	.tooltip {
+    .oh-card-dashboard--warning .oh-card-dashboard__count { background: linear-gradient(135deg, #f39c12, #e67e22); -webkit-background-clip: text; }
+    .oh-card-dashboard--danger .oh-card-dashboard__count { background: linear-gradient(135deg, #e74c3c, #c0392b); -webkit-background-clip: text; }
+    .oh-card-dashboard--success .oh-card-dashboard__count { background: linear-gradient(135deg, #2ecc71, #27ae60); -webkit-background-clip: text; }
+    .oh-card-dashboard--neutral .oh-card-dashboard__count { background: linear-gradient(135deg, #95a5a6, #7f8c8d); -webkit-background-clip: text; }
+    
+    .done-task { background-color: rgba(154, 205, 50, 0.15) !important; backdrop-filter: blur(4px); }
+    .scheduled-task { background-color: rgba(0, 175, 255, 0.15) !important; backdrop-filter: blur(4px); }
+    .ongoing-task { background-color: rgba(230, 255, 0, 0.15) !important; backdrop-filter: blur(4px); }
+    .stuck-task { background-color: rgba(255, 69, 0, 0.15) !important; backdrop-filter: blur(4px); }
+    .todo-task { background-color: rgba(141, 141, 141, 0.15) !important; backdrop-filter: blur(4px); }
+	
+    .tooltip {
 		position: absolute;
-		background-color: #000;
+		background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
 		color: #fff;
-		padding: 5px;
-		border-radius: 5px;
+		padding: 8px 12px;
+		border-radius: 8px;
 		display: block;
-		margin-top:80px;
+		margin-top: 80px;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 </style>
@@ -143,9 +170,9 @@
 									{% endfor %}
 								</ul>
 							{% else %}
-								<div style="height: 240px; display:flex;align-items: center;justify-content: center;" class="">
-									<div style="" class="">
-										<img style="display: block;width: 100px;margin: 20px auto ;" src="{% static 'images/ui/no_candidate.png' %}" class=""/>
+								<div style="height: 240px; display:flex;align-items: center;justify-content: center;" >
+									<div style="" >
+										<img style="display: block;width: 100px;margin: 20px auto ;" src="{% static 'images/ui/no_candidate.png' %}" />
 										<h3 style="font-size:16px" class="oh-404__subtitle">{% trans "No skill zone available." %}</h3>
 									</div>
 								</div>
@@ -168,7 +195,7 @@
 								{% else %}
 								<div style="display:flex;align-items: center;justify-content: center;">
 									<div style="height:282px; justify-content:center;align-items:center; margin-top: -59px;" class="d-flex">
-										<img style="height:125px;" src="{% static 'images/ui/no_vacancy.png' %}" class=""/>
+										<img style="height:125px;" src="{% static 'images/ui/no_vacancy.png' %}" />
 									</div>
 								</div>
 								<h3 style="font-size:16px; margin-bottom:69px;" class="oh-404__subtitle">{% trans "No department-specific vacancies currently." %}</h3>
@@ -195,7 +222,7 @@
 								{% else %}
 								<div style="display:flex;align-items: center;justify-content: center;">
 									<div style="height:282px; justify-content:center;align-items:center; margin-top: -59px;" class="d-flex">
-										<img style="height:125px;" src="{% static 'images/ui/no_vacancy.png' %}" class=""/>
+										<img style="height:125px;" src="{% static 'images/ui/no_vacancy.png' %}" />
 									</div>
 								</div>
 								<h3 style="font-size:16px; margin-bottom:69px;" class="oh-404__subtitle">{% trans "No Candidates available." %}</h3>
@@ -208,7 +235,7 @@
 						<div class="col-12 col-sm-12 col-md-6 col-lg-4 oh-card" style="border:0px solid white" >
 							<div class="oh-card-dashboard__header oh-card-dashboard__header--divider">
 								<span class="oh-card-dashboard__title">{% trans "Candidate on Onboard" %}</span>
-								{% if onboarding_count %}<span class="oh-card-dashboard__title float-end"><a href=""/recruitment/candidate-view/"?start_onboard=true" style="text-decoration:none; color:orange;">{% trans "View" %}</a></span>{% endif %}
+								{% if onboarding_count %}<span class="oh-card-dashboard__title float-end"><a href="{% url 'candidate-view' %}?start_onboard=true" style="text-decoration:none; color:orange;">{% trans "View" %}</a></span>{% endif %}
 							</div>
 							<div class="oh-card-dashboard__body" style="height:325px; overflow-y:auto;">
 								{% if onboarding_count %}
@@ -231,9 +258,9 @@
 										{% endfor %}
 									</ul>
 								{% else %}
-									<div style="height: 240px; display:flex;align-items: center;justify-content: center;" class="">
-										<div style="" class="">
-											<img style="display: block;width: 100px;margin: 20px auto ;" src="{% static 'images/ui/no_candidate.png' %}" class=""/>
+									<div style="height: 240px; display:flex;align-items: center;justify-content: center;" >
+										<div style="" >
+											<img style="display: block;width: 100px;margin: 20px auto ;" src="{% static 'images/ui/no_candidate.png' %}" />
 											<h3 style="font-size:16px" class="oh-404__subtitle">{% trans "No candidates started onboarding." %}</h3>
 										</div>
 									</div>
@@ -262,9 +289,9 @@
 							{% if joining %}
 								<canvas class="oh-card-dashboard__body" id="hiringChart"></div>
 							{% else %}
-							<div style="height: 430px; display:flex;align-items: center;justify-content: center;" class="">
-								<div style="" class="">
-									<img style="display: block;width: 115px;margin: 20px auto ;" src="{% static 'images/ui/no_records.svg' %}" class=""/>
+							<div style="height: 430px; display:flex;align-items: center;justify-content: center;" >
+								<div style="" >
+									<img style="display: block;width: 115px;margin: 20px auto ;" src="{% static 'images/ui/no_records.svg' %}" />
 									<h3 style="font-size:16px" class="oh-404__subtitle">{% trans "No records were available." %}</h3>
 								</div>
 							</div>
@@ -318,7 +345,9 @@
 								class="col-12 col-sm-12 col-md-6 col-lg-7 oh-card-dashboard--moveable mt-4"
 								style="height: 455px;
 								background-color: white;"
-								id="taskStatus"#""
+								id="taskStatus"
+								task-report-onboarding" %}"
+								
 								>
 							</div>
 						{% else %}
@@ -328,7 +357,7 @@
 							<div
 							class="oh-card-dashboard oh-card-dashboard--no-scale oh-card-dashboard--transparent" >
 							<span class="oh-card-dashboard__title">{% trans "My Onboarding Tasks" %}</span>
-									<div style="height: 403px; display:grid;align-items: center;justify-content: center;" class="">
+									<div style="height: 403px; display:grid;align-items: center;justify-content: center;" >
 										<img style="display: block;width: 120px;margin: 20px auto ;" src="{% static 'images/ui/time-management.png' %}" class="mb-0"/>
 										<h3 style="font-size:16px" class="oh-404__subtitle">{% trans "No onboarding tasks are currently available." %}</h3>
 									</div>
@@ -353,9 +382,9 @@
 							{% if stage_chart_count %}
 								<canvas id="recruitmentChart1" width="385" height="228"></canvas>
 							{% else %}
-								<div style="height: 362px; display:flex;align-items: center;justify-content: center;" class="">
-									<div style="" class="">
-										<img style="display: block;width: 120px;margin: 20px auto ;" src="{% static 'images/ui/interview.png' %}" class=""/>
+								<div style="height: 362px; display:flex;align-items: center;justify-content: center;" >
+									<div style="" >
+										<img style="display: block;width: 120px;margin: 20px auto ;" src="{% static 'images/ui/interview.png' %}" />
 										<h3 style="font-size:16px" class="oh-404__subtitle">{% trans "No recruitment stages currently available." %}</h3>
 									</div>
 								</div>
