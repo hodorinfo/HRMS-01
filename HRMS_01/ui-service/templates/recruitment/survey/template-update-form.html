@@ -1,0 +1,22 @@
+<form/recruitment/recruitment-survey-question-template-edit/""
+  method="post"
+>
+  {% csrf_token %} {{form.as_p}}
+</form>
+
+<script>
+  $(document).ready(function () {
+    function toggleOpt(){
+        if ($("[name=type]:first").val() == "options" || $("[name=type]:first").val() == "multiple") {
+            $("#id_options, [for='id_options']").show();
+          } else {
+            $("#id_options, [for='id_options']").hide();
+          }
+    }
+    $("[name=type]:first").change(function (e) {
+      toggleOpt()
+    });
+    toggleOpt()
+
+  });
+</script>

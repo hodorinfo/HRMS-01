@@ -1,0 +1,27 @@
+{% load i18n %}
+{% load static %}
+<div class="oh-dropdown" x-data="{open: false}">
+    <button class="oh-btn oh-btn--light-card d-flex align-items-center" @click="open = !open" type="button" style="padding: 5px 10px; background: transparent; border: none; cursor: pointer;">
+        <img src="{% static 'images/ui/en.png' %}" width="20" class="me-1" style="border-radius: 2px;" />
+        <span style="font-weight: 500; font-size: 14px; color: #333;">EN</span>
+    </button>
+    <div class="oh-dropdown__menu oh-dropdown__menu--right" x-show="open" @click.outside="open = false" style="display: none; position: absolute; right: 0; background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; min-width: 120px;">
+        <ul class="oh-dropdown__items" style="list-style: none; margin: 0; padding: 5px 0;">
+            <li class="oh-dropdown__item" style="padding: 5px 15px;">
+                <a href="#" class="oh-dropdown__link d-flex align-items-center" style="text-decoration: none; color: #333; font-size: 14px;">
+                    <img src="{% static 'images/ui/en.png' %}" width="16" class="me-2" /> English
+                </a>
+            </li>
+            <li class="oh-dropdown__item" style="padding: 5px 15px;">
+                <a href="#" class="oh-dropdown__link d-flex align-items-center" style="text-decoration: none; color: #333; font-size: 14px;">
+                    <img src="{% static 'images/ui/de.png' %}" width="16" class="me-2" /> Deutsch
+                </a>
+            </li>
+            <li class="oh-dropdown__item" style="padding: 5px 15px;">
+                <a href="#" class="oh-dropdown__link d-flex align-items-center" style="text-decoration: none; color: #333; font-size: 14px;">
+                    <img src="{% static 'images/ui/fr.png' %}" width="16" class="me-2" /> Français
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>

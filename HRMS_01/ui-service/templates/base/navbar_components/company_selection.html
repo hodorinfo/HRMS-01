@@ -1,0 +1,13 @@
+{% load i18n %}
+<div class="oh-dropdown" x-data="{open: false}">
+    <button class="oh-btn oh-btn--light-card" @click="open = !open" type="button" style="padding: 5px 10px; background: transparent; border: none; cursor: pointer; font-weight: 500; font-size: 14px; color: #333;">
+        <span>{{ white_label_company_name }}</span>
+    </button>
+    <div class="oh-dropdown__menu oh-dropdown__menu--right" x-show="open" @click.outside="open = false" style="display: none; position: absolute; right: 0; background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; min-width: 150px;">
+        <ul class="oh-dropdown__items" style="list-style: none; margin: 0; padding: 5px 0;">
+            <li class="oh-dropdown__item" style="padding: 5px 15px;">
+                <a href="#" class="oh-dropdown__link" style="text-decoration: none; color: #333; font-size: 14px;">{{ white_label_company_name }}</a>
+            </li>
+        </ul>
+    </div>
+</div>

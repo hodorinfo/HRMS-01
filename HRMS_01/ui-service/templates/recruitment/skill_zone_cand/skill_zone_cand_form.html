@@ -1,0 +1,15 @@
+{% load i18n %}
+<form
+    id="skillform"
+    {% if sz_id %}/recruitment/skill-zone-cand-create/""
+    {% elif cand_id %}#""
+    {% else %}/recruitment/skill-zone-cand-edit/""
+    {% endif %}
+    hx-encoding="multipart/form-data">
+    {% csrf_token %}
+    {{form.as_p}}
+</form>
+
+<script>
+    $("#skillform .col-md-6").toggleClass("col-md-6");
+</script>

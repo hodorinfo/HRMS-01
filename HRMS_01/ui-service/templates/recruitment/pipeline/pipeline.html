@@ -1,0 +1,368 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+{% load recruitmentfilters %}
+
+{% block content %}
+
+<div id="ohMessages"></div>
+
+<style>
+  .oh-tabs__tab--active {
+    border-right: solid 1px #dedede !important;
+  }
+  .avatars { display: flex; padding: 8px 10px; }
+  .avatars__item {
+    background-color: #596376; border: 2px solid white; border-radius: 100%;
+    color: #fff; display: block; font-size: 12px; font-weight: 100;
+    height: 26px; width: 26px; line-height: 17px; text-align: center;
+    transition: margin 0.1s ease-in-out; overflow: hidden; margin-left: -10px;
+  }
+  .avatars:hover .avatars__item { margin-right: 10px; }
+  .avatars__item img { width: 100%; }
+
+  /* Kanban Layout */
+  .pipeline-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+  }
+  .pipeline-nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    background: white;
+    border-bottom: 1px solid #eaeaea;
+    flex-shrink: 0;
+  }
+  .pipeline-tabs-row {
+    display: flex;
+    overflow-x: auto;
+    background: white;
+    border-bottom: 1px solid #eaeaea;
+    flex-shrink: 0;
+  }
+  .pipeline-tab {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #7f8c8d;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pipeline-tab.active { color: #e05f2c; border-bottom-color: #e05f2c; }
+  .pipeline-tab .tab-count {
+    background: #f0f0f0; padding: 1px 7px; border-radius: 10px; font-size: 11px;
+  }
+  .kanban-board {
+    display: flex;
+    overflow-x: auto;
+    padding: 16px 24px;
+    gap: 16px;
+    flex-grow: 1;
+    background: #f4f6f8;
+  }
+  .kanban-col {
+    flex: 0 0 300px;
+    background: #eceef0;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+  }
+  .kanban-col__header {
+    padding: 12px 14px;
+    background: white;
+    border-radius: 10px 10px 0 0;
+    border-top: 3px solid #ccc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .kanban-col__header-left {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 14px; color: #2c3e50;
+  }
+  .kanban-col__badge {
+    background: #e0e0e0; border-radius: 10px;
+    padding: 1px 8px; font-size: 12px; color: #555;
+  }
+  .kanban-col__cards { padding: 10px; overflow-y: auto; flex-grow: 1; }
+  .kanban-card {
+    background: white; border-radius: 8px; padding: 14px;
+    margin-bottom: 12px; border: 1px solid #eaeaea;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    cursor: grab; transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .kanban-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+  .kanban-card:active { cursor: grabbing; }
+  .kanban-card__head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .kanban-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: #596376; color: white; display: flex;
+    align-items: center; justify-content: center; font-weight: bold; font-size: 13px; flex-shrink: 0;
+  }
+  .kanban-card__name { font-weight: 600; font-size: 14px; color: #2c3e50; margin: 0; }
+  .kanban-card__pos { font-size: 12px; color: #888; margin: 0; }
+  .kanban-card__stars { color: #f1c40f; font-size: 13px; }
+  .kanban-card__meta { font-size: 12px; color: #7f8c8d; display: flex; flex-direction: column; gap: 4px; }
+  .kanban-card__meta span { display: flex; align-items: center; gap: 5px; }
+  .kanban-add-btn {
+    margin: 8px 10px 12px; padding: 10px;
+    border: 1px dashed #ccc; border-radius: 8px;
+    text-align: center; font-size: 13px; color: #888;
+    cursor: pointer; background: transparent; width: calc(100% - 20px);
+    transition: background 0.2s;
+  }
+  .kanban-add-btn:hover { background: rgba(0,0,0,0.03); color: #555; }
+
+  .pipeline-toggle { cursor: move; }
+  .animated-background {
+    animation-duration: 2s; animation-fill-mode: forwards;
+    animation-iteration-count: infinite; animation-name: placeHolderShimmer;
+    animation-timing-function: linear;
+    background: linear-gradient(to right, #eeeeee9c -58%, #e4e4e496 18%, #eeeeee61 33%);
+    background-size: 800px 64px; height: 80px; border-radius: 8px;
+  }
+  @keyframes placeHolderShimmer {
+    0% { background-position: -800px 0 }
+    100% { background-position: 800px 0 }
+  }
+</style>
+
+<div class="pipeline-wrapper">
+
+  <!-- Nav Bar -->
+  <div class="pipeline-nav-bar">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <h5 class="m-0" style="font-weight: 700; color: #2c3e50;">{% trans "Pipeline" %}</h5>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <div class="oh-input-group" style="position: relative;">
+        <input type="search" id="pipelineSearch" class="oh-input oh-input--sm" placeholder="{% trans 'Search candidates...' %}" style="padding-right: 32px; width: 220px;" />
+        <ion-icon name="search-outline" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #888;"></ion-icon>
+      </div>
+      <button class="oh-btn oh-btn--secondary-outline oh-btn--sm">
+        <ion-icon name="filter-outline"></ion-icon> {% trans "Filter" %}
+      </button>
+      <a href="/recruitment/candidate-create" class="oh-btn oh-btn--primary oh-btn--sm">
+        <ion-icon name="person-add-outline"></ion-icon> {% trans "Add Candidate" %}
+      </a>
+      <a href="/recruitment/stage-create" class="oh-btn oh-btn--secondary oh-btn--sm">
+        <ion-icon name="add-outline"></ion-icon> {% trans "Add Stage" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Recruitment Tabs (Job Positions) -->
+  <div class="pipeline-tabs-row">
+    <div class="pipeline-tab active">
+      Software Engineer <span class="tab-count">3</span>
+    </div>
+    <div class="pipeline-tab">
+      Product Manager <span class="tab-count">1</span>
+    </div>
+    <div class="pipeline-tab">
+      UI/UX Designer <span class="tab-count">2</span>
+    </div>
+    <div class="pipeline-tab">
+      DevOps Engineer <span class="tab-count">0</span>
+    </div>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="kanban-board" id="kanbanBoard">
+
+    <!-- Stage: Initial / New -->
+    <div class="kanban-col" id="stage-1">
+      <div class="kanban-col__header" style="border-top-color: #3498db;">
+        <div class="kanban-col__header-left">
+          <input type="checkbox" title="{% trans 'Select all' %}">
+          {% trans "New" %} <span class="kanban-col__badge">2</span>
+        </div>
+        <button class="oh-btn oh-btn--sm" style="padding:3px 8px; font-size:11px; background:transparent; border:1px solid #ddd; border-radius:6px; color:#555">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="kanban-col__cards">
+
+        <div class="kanban-card" draggable="true" onclick="window.location='/recruitment/candidate-view/1/'">
+          <div class="kanban-card__head">
+            <input type="checkbox" onclick="event.stopPropagation()">
+            <div class="kanban-avatar">JA</div>
+            <div>
+              <p class="kanban-card__name">John Appleseed</p>
+              <p class="kanban-card__pos">Software Engineer</p>
+            </div>
+          </div>
+          <div class="kanban-card__stars">★★★☆☆</div>
+          <div class="kanban-card__meta mt-2">
+            <span><ion-icon name="mail-outline"></ion-icon> john@apple.com</span>
+            <span><ion-icon name="call-outline"></ion-icon> +1 234 567 8900</span>
+          </div>
+        </div>
+
+        <div class="kanban-card" draggable="true" onclick="window.location='/recruitment/candidate-view/2/'">
+          <div class="kanban-card__head">
+            <input type="checkbox" onclick="event.stopPropagation()">
+            <div class="kanban-avatar" style="background:#2ecc71;">SJ</div>
+            <div>
+              <p class="kanban-card__name">Sarah Jones</p>
+              <p class="kanban-card__pos">Software Engineer</p>
+            </div>
+          </div>
+          <div class="kanban-card__stars">★★★★☆</div>
+          <div class="kanban-card__meta mt-2">
+            <span><ion-icon name="mail-outline"></ion-icon> sarah@jones.com</span>
+            <span><ion-icon name="call-outline"></ion-icon> +1 987 654 3210</span>
+          </div>
+        </div>
+
+      </div>
+      <button class="kanban-add-btn"><ion-icon name="add-outline"></ion-icon> {% trans "Add Candidate" %}</button>
+    </div>
+
+    <!-- Stage: Screening -->
+    <div class="kanban-col" id="stage-2">
+      <div class="kanban-col__header" style="border-top-color: #f1c40f;">
+        <div class="kanban-col__header-left">
+          <input type="checkbox" title="{% trans 'Select all' %}">
+          {% trans "Screening" %} <span class="kanban-col__badge">1</span>
+        </div>
+        <button class="oh-btn oh-btn--sm" style="padding:3px 8px; font-size:11px; background:transparent; border:1px solid #ddd; border-radius:6px; color:#555">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="kanban-col__cards">
+        <div class="kanban-card" draggable="true" onclick="window.location='/recruitment/candidate-view/3/'">
+          <div class="kanban-card__head">
+            <input type="checkbox" onclick="event.stopPropagation()">
+            <div class="kanban-avatar" style="background:#e67e22;">MK</div>
+            <div>
+              <p class="kanban-card__name">Mike King</p>
+              <p class="kanban-card__pos">Software Engineer</p>
+            </div>
+          </div>
+          <div class="kanban-card__stars">★★☆☆☆</div>
+          <div class="kanban-card__meta mt-2">
+            <span><ion-icon name="mail-outline"></ion-icon> mike@king.com</span>
+          </div>
+        </div>
+      </div>
+      <button class="kanban-add-btn"><ion-icon name="add-outline"></ion-icon> {% trans "Add Candidate" %}</button>
+    </div>
+
+    <!-- Stage: Interview -->
+    <div class="kanban-col" id="stage-3">
+      <div class="kanban-col__header" style="border-top-color: #9b59b6;">
+        <div class="kanban-col__header-left">
+          <input type="checkbox" title="{% trans 'Select all' %}">
+          {% trans "Interview" %} <span class="kanban-col__badge">0</span>
+        </div>
+        <button class="oh-btn oh-btn--sm" style="padding:3px 8px; font-size:11px; background:transparent; border:1px solid #ddd; border-radius:6px; color:#555">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="kanban-col__cards"></div>
+      <button class="kanban-add-btn"><ion-icon name="add-outline"></ion-icon> {% trans "Add Candidate" %}</button>
+    </div>
+
+    <!-- Stage: Offered -->
+    <div class="kanban-col" id="stage-4">
+      <div class="kanban-col__header" style="border-top-color: #1abc9c;">
+        <div class="kanban-col__header-left">
+          <input type="checkbox" title="{% trans 'Select all' %}">
+          {% trans "Offered" %} <span class="kanban-col__badge">0</span>
+        </div>
+        <button class="oh-btn oh-btn--sm" style="padding:3px 8px; font-size:11px; background:transparent; border:1px solid #ddd; border-radius:6px; color:#555">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="kanban-col__cards"></div>
+      <button class="kanban-add-btn"><ion-icon name="add-outline"></ion-icon> {% trans "Add Candidate" %}</button>
+    </div>
+
+    <!-- Stage: Hired -->
+    <div class="kanban-col" id="stage-5">
+      <div class="kanban-col__header" style="border-top-color: #2ecc71;">
+        <div class="kanban-col__header-left">
+          <input type="checkbox" title="{% trans 'Select all' %}">
+          {% trans "Hired" %} <span class="kanban-col__badge">0</span>
+        </div>
+        <button class="oh-btn oh-btn--sm" style="padding:3px 8px; font-size:11px; background:transparent; border:1px solid #ddd; border-radius:6px; color:#555">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="kanban-col__cards"></div>
+      <button class="kanban-add-btn"><ion-icon name="add-outline"></ion-icon> {% trans "Add Candidate" %}</button>
+    </div>
+
+  </div><!-- /kanban-board -->
+</div><!-- /pipeline-wrapper -->
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.pipeline-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.pipeline-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  // Drag & drop between kanban columns
+  const cards = document.querySelectorAll('.kanban-card');
+  const columns = document.querySelectorAll('.kanban-col__cards');
+  let dragging = null;
+
+  cards.forEach(card => {
+    card.addEventListener('dragstart', function(e) {
+      dragging = this;
+      setTimeout(() => this.style.opacity = '0.5', 0);
+    });
+    card.addEventListener('dragend', function() {
+      this.style.opacity = '1';
+      dragging = null;
+    });
+  });
+
+  columns.forEach(col => {
+    col.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.style.background = 'rgba(52,152,219,0.06)';
+    });
+    col.addEventListener('dragleave', function() {
+      this.style.background = '';
+    });
+    col.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.style.background = '';
+      if (dragging) {
+        this.appendChild(dragging);
+        // Update badge counts
+        document.querySelectorAll('.kanban-col').forEach(function(col) {
+          const count = col.querySelectorAll('.kanban-card').length;
+          col.querySelector('.kanban-col__badge').textContent = count;
+        });
+      }
+    });
+  });
+
+  // Search
+  document.getElementById('pipelineSearch').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.kanban-card').forEach(function(card) {
+      const name = card.querySelector('.kanban-card__name').textContent.toLowerCase();
+      card.style.display = name.includes(q) ? '' : 'none';
+    });
+  });
+</script>
+
+{% endblock content %}

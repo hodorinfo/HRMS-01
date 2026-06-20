@@ -1,0 +1,315 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+{% load recruitmentfilters %}
+
+{% block content %}
+
+<style>
+  body { background-color: #f9f9f9 !important; }
+  .cand-profile-wrapper { padding: 24px; }
+  .cand-profile-header {
+    background: white; border-radius: 12px; padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  }
+  .cand-profile-header__left { display: flex; align-items: center; gap: 20px; }
+  .cand-avatar-lg {
+    width: 80px; height: 80px; border-radius: 10px;
+    background: #596376; display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 28px; font-weight: bold; flex-shrink: 0;
+  }
+  .cand-name { font-size: 22px; font-weight: 700; color: #2c3e50; margin: 0; }
+  .cand-pos { color: #888; font-size: 14px; margin: 4px 0 0 0; }
+  .cand-stage-badge {
+    display: inline-block; padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; background: #e8f4fd; color: #3498db; margin-top: 6px;
+  }
+  .cand-profile-header__right { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .cand-tabs {
+    display: flex; border-bottom: 1px solid #eaeaea;
+    background: white; border-radius: 12px 12px 0 0; overflow-x: auto;
+  }
+  .cand-tab {
+    padding: 14px 20px; cursor: pointer; font-size: 14px; font-weight: 600;
+    color: #7f8c8d; white-space: nowrap; border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  .cand-tab.active { color: #e05f2c; border-bottom-color: #e05f2c; }
+
+  .cand-tab-content {
+    background: white; border-radius: 0 0 12px 12px;
+    padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: none;
+  }
+  .cand-tab-content.active { display: block; }
+
+  .info-section-title {
+    font-weight: 700; font-size: 15px; color: #2c3e50;
+    margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0;
+  }
+  .info-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 14px; }
+  .info-label {
+    font-size: 13px; color: #888; min-width: 130px; display: flex; align-items: center; gap: 5px;
+  }
+  .info-value { font-size: 14px; font-weight: 500; color: #2c3e50; }
+
+  .star-rating { color: #f1c40f; font-size: 18px; }
+
+  .timeline-item {
+    display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid #f5f5f5;
+  }
+  .timeline-dot {
+    width: 12px; height: 12px; background: #3498db; border-radius: 50%;
+    flex-shrink: 0; margin-top: 4px;
+  }
+  .timeline-text { font-size: 13px; color: #555; }
+  .timeline-time { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+  .note-box {
+    background: #fafafa; border-radius: 8px; padding: 14px;
+    border-left: 4px solid #3498db; margin-bottom: 14px;
+  }
+  .note-box__text { font-size: 13px; color: #444; margin: 0; }
+  .note-box__meta { font-size: 11px; color: #aaa; margin-top: 6px; }
+  .note-add-form textarea {
+    width: 100%; padding: 10px; border: 1px solid #ddd;
+    border-radius: 8px; font-size: 13px; resize: vertical; min-height: 80px;
+  }
+</style>
+
+<div class="cand-profile-wrapper">
+
+  <!-- Navigation controls -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <a href="/recruitment/candidate-view/" class="oh-btn oh-btn--secondary-outline oh-btn--sm">
+      <ion-icon name="arrow-back-outline"></ion-icon> {% trans "Back to Candidates" %}
+    </a>
+    <div style="display:flex; gap:8px;">
+      <a href="#" class="oh-btn oh-btn--sm" style="background:transparent; border:1px solid #ddd; padding: 6px 12px;">
+        <ion-icon name="arrow-back-circle-outline" style="font-size:18px;"></ion-icon>
+      </a>
+      <a href="#" class="oh-btn oh-btn--sm" style="background:transparent; border:1px solid #ddd; padding: 6px 12px;">
+        <ion-icon name="arrow-forward-circle-outline" style="font-size:18px;"></ion-icon>
+      </a>
+    </div>
+  </div>
+
+  <!-- Profile Header -->
+  <div class="cand-profile-header">
+    <div class="cand-profile-header__left">
+      <div class="cand-avatar-lg">
+        {% if candidate and candidate.name %}{{ candidate.name|slice:":2"|upper }}{% else %}CA{% endif %}
+      </div>
+      <div>
+        <h1 class="cand-name">
+          {% if candidate %}{{ candidate.name }}{% else %}John Appleseed{% endif %}
+        </h1>
+        <p class="cand-pos">
+          {% if candidate %}{{ candidate.job_position_id }}{% else %}Software Engineer{% endif %}
+        </p>
+        <span class="cand-stage-badge">
+          <ion-icon name="git-branch-outline"></ion-icon>
+          {% if candidate %}{{ candidate.stage_id }}{% else %}Screening{% endif %}
+        </span>
+      </div>
+    </div>
+    <div class="cand-profile-header__right">
+      <a href="#" class="oh-btn oh-btn--secondary-outline oh-btn--sm">
+        <ion-icon name="mail-outline"></ion-icon> {% trans "Send Mail" %}
+      </a>
+      <a href="#" class="oh-btn oh-btn--secondary-outline oh-btn--sm">
+        <ion-icon name="calendar-outline"></ion-icon> {% trans "Schedule Interview" %}
+      </a>
+      <a href="/recruitment/candidate-update/{% if candidate %}{{ candidate.id }}{% else %}1{% endif %}/" class="oh-btn oh-btn--secondary-outline oh-btn--sm">
+        <ion-icon name="create-outline"></ion-icon> {% trans "Edit" %}
+      </a>
+      <a href="#" class="oh-btn oh-btn--success oh-btn--sm">
+        <ion-icon name="checkmark-circle-outline"></ion-icon> {% trans "Convert to Employee" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="cand-tabs" id="candTabs">
+    <div class="cand-tab active" data-target="tab-about">{% trans "About" %}</div>
+    <div class="cand-tab" data-target="tab-resume">{% trans "Resume" %}</div>
+    <div class="cand-tab" data-target="tab-notes">{% trans "Notes" %}</div>
+    <div class="cand-tab" data-target="tab-history">{% trans "History" %}</div>
+    <div class="cand-tab" data-target="tab-documents">{% trans "Documents" %}</div>
+    <div class="cand-tab" data-target="tab-rating">{% trans "Rating" %}</div>
+    <div class="cand-tab" data-target="tab-interviews">{% trans "Interviews" %}</div>
+    <div class="cand-tab" data-target="tab-survey">{% trans "Survey" %}</div>
+  </div>
+
+  <!-- Tab: About -->
+  <div class="cand-tab-content active" id="tab-about">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="info-section-title"><ion-icon name="person-outline"></ion-icon> {% trans "Personal Information" %}</div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="mail-outline"></ion-icon> {% trans "Email" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.email }}{% else %}john@apple.com{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="call-outline"></ion-icon> {% trans "Phone" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.mobile }}{% else %}+1 234 567 8900{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="calendar-outline"></ion-icon> {% trans "Date of Birth" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.dob }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="transgender-outline"></ion-icon> {% trans "Gender" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.gender|capfirst }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="home-outline"></ion-icon> {% trans "Address" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.address }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="flag-outline"></ion-icon> {% trans "Country" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.country }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="brush-outline"></ion-icon> {% trans "Portfolio" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.portfolio }}{% else %}—{% endif %}</span>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="info-section-title"><ion-icon name="briefcase-outline"></ion-icon> {% trans "Recruitment Information" %}</div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="construct-outline"></ion-icon> {% trans "Recruitment" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.recruitment_id }}{% else %}Software Engineer Batch 1{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="briefcase-outline"></ion-icon> {% trans "Job Position" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.job_position_id }}{% else %}Software Engineer{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="git-branch-outline"></ion-icon> {% trans "Current Stage" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.stage_id }}{% else %}Screening{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="file-tray-stacked-outline"></ion-icon> {% trans "Source" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.source }}{% else %}LinkedIn{% endif %}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label"><ion-icon name="people-outline"></ion-icon> {% trans "Referral" %}</span>
+          <span class="info-value">{% if candidate %}{{ candidate.referral }}{% else %}—{% endif %}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Resume -->
+  <div class="cand-tab-content" id="tab-resume">
+    {% if candidate and candidate.resume %}
+      <iframe src="{{ candidate.resume.url }}" style="width:100%; height:600px; border:none; border-radius:8px;"></iframe>
+    {% else %}
+      <div class="text-center py-5">
+        <ion-icon name="document-outline" style="font-size:64px; color:#ccc;"></ion-icon>
+        <p class="mt-3" style="color:#888;">{% trans "No resume on file for this candidate." %}</p>
+        <button class="oh-btn oh-btn--primary oh-btn--sm"><ion-icon name="cloud-upload-outline"></ion-icon> {% trans "Upload Resume" %}</button>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Tab: Notes -->
+  <div class="cand-tab-content" id="tab-notes">
+    <div class="note-box">
+      <p class="note-box__text">Candidate has strong problem solving skills. Recommended for next round.</p>
+      <p class="note-box__meta">{% trans "Added by" %} Admin &bull; 2 {% trans "days ago" %}</p>
+    </div>
+    <div class="note-box">
+      <p class="note-box__text">Phone screen completed. Communication skills are excellent.</p>
+      <p class="note-box__meta">{% trans "Added by" %} Recruiter &bull; 5 {% trans "days ago" %}</p>
+    </div>
+    <hr>
+    <div class="note-add-form mt-3">
+      <textarea placeholder="{% trans 'Add a note...' %}"></textarea>
+      <button class="oh-btn oh-btn--primary oh-btn--sm mt-2"><ion-icon name="save-outline"></ion-icon> {% trans "Save Note" %}</button>
+    </div>
+  </div>
+
+  <!-- Tab: History -->
+  <div class="cand-tab-content" id="tab-history">
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#2ecc71;"></div>
+      <div>
+        <div class="timeline-text">{% trans "Stage changed from" %} <strong>New</strong> {% trans "to" %} <strong>Screening</strong></div>
+        <div class="timeline-time">{% trans "June 18, 2026 — 10:30 AM" %}</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#3498db;"></div>
+      <div>
+        <div class="timeline-text">{% trans "Candidate created and added to pipeline" %}</div>
+        <div class="timeline-time">{% trans "June 15, 2026 — 09:00 AM" %}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Documents -->
+  <div class="cand-tab-content" id="tab-documents">
+    <div class="text-center py-5">
+      <ion-icon name="folder-open-outline" style="font-size:64px; color:#ccc;"></ion-icon>
+      <p class="mt-3" style="color:#888;">{% trans "No documents uploaded yet." %}</p>
+      <button class="oh-btn oh-btn--primary oh-btn--sm"><ion-icon name="cloud-upload-outline"></ion-icon> {% trans "Upload Document" %}</button>
+    </div>
+  </div>
+
+  <!-- Tab: Rating -->
+  <div class="cand-tab-content" id="tab-rating">
+    <div class="info-section-title">{% trans "Your Rating" %}</div>
+    <div class="star-rating mb-3">
+      <span>★</span><span>★</span><span>★</span><span style="color:#ddd;">★</span><span style="color:#ddd;">★</span>
+      <span class="ms-2" style="font-size:13px; color:#888;">3 / 5</span>
+    </div>
+    <p style="font-size:13px; color:#888;">{% trans "Rate this candidate to help the hiring team make decisions." %}</p>
+  </div>
+
+  <!-- Tab: Interviews -->
+  <div class="cand-tab-content" id="tab-interviews">
+    <div class="text-center py-5">
+      <ion-icon name="calendar-outline" style="font-size:64px; color:#ccc;"></ion-icon>
+      <p class="mt-3" style="color:#888;">{% trans "No interviews scheduled yet." %}</p>
+      <a href="#" class="oh-btn oh-btn--primary oh-btn--sm"><ion-icon name="add-outline"></ion-icon> {% trans "Schedule Interview" %}</a>
+    </div>
+  </div>
+
+  <!-- Tab: Survey -->
+  <div class="cand-tab-content" id="tab-survey">
+    <div class="text-center py-5">
+      <ion-icon name="clipboard-outline" style="font-size:64px; color:#ccc;"></ion-icon>
+      <p class="mt-3" style="color:#888;">{% trans "No survey responses for this candidate." %}</p>
+    </div>
+  </div>
+
+</div><!-- /cand-profile-wrapper -->
+
+<script>
+  document.querySelectorAll('.cand-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      const target = this.getAttribute('data-target');
+      document.querySelectorAll('.cand-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.cand-tab-content').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(target).classList.add('active');
+      localStorage.setItem('activeCandTab', target);
+    });
+  });
+
+  // Restore last tab
+  var savedTab = localStorage.getItem('activeCandTab');
+  if (savedTab && document.getElementById(savedTab)) {
+    document.querySelectorAll('.cand-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.cand-tab-content').forEach(c => c.classList.remove('active'));
+    var tabLink = document.querySelector(`[data-target="${savedTab}"]`);
+    if (tabLink) { tabLink.classList.add('active'); }
+    document.getElementById(savedTab).classList.add('active');
+  }
+</script>
+
+{% endblock content %}

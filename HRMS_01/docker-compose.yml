@@ -1,0 +1,317 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-horilla}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-horilla}
+      POSTGRES_DB: ${POSTGRES_DB:-horilla}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-horilla}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - horilla-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - horilla-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - identity-service
+      - core-service
+      - attendance-service
+      - payroll-service
+      - permission-service
+      - talent-service
+      - platform-service
+      - ui-service
+    networks:
+      - horilla-network
+
+  identity-service:
+    build:
+      context: .
+      dockerfile: identity-service/Dockerfile
+    environment:
+      DATABASE_URL: ${IDENTITY_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      PERMISSION_SERVICE_URL: ${PERMISSION_SERVICE_URL}
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - horilla-network
+
+  identity-worker:
+    build:
+      context: .
+      dockerfile: identity-service/Dockerfile
+    command: celery -A app.celery_worker.celery_app worker --loglevel=info -Q events,celery
+    environment:
+      DATABASE_URL: ${IDENTITY_DATABASE_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+    depends_on:
+      - redis
+      - identity-service
+    networks:
+      - horilla-network
+
+  core-service:
+    build:
+      context: .
+      dockerfile: core-service/Dockerfile
+    environment:
+      DATABASE_URL: ${CORE_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      PERMISSION_SERVICE_URL: ${PERMISSION_SERVICE_URL}
+    ports:
+      - "8002:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - horilla-network
+
+  core-worker:
+    build:
+      context: .
+      dockerfile: core-service/Dockerfile
+    command: celery -A app.celery_worker.celery_app worker --loglevel=info
+    environment:
+      DATABASE_URL: ${CORE_DATABASE_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+    depends_on:
+      - redis
+      - core-service
+    networks:
+      - horilla-network
+
+  attendance-service:
+    build:
+      context: .
+      dockerfile: attendance-service/Dockerfile
+    environment:
+      DATABASE_URL: ${ATTENDANCE_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      PERMISSION_SERVICE_URL: ${PERMISSION_SERVICE_URL}
+    ports:
+      - "8003:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - horilla-network
+
+  attendance-worker:
+    build:
+      context: .
+      dockerfile: attendance-service/Dockerfile
+    command: celery -A app.celery_worker.celery_app worker --loglevel=info -Q events,celery
+    environment:
+      DATABASE_URL: ${ATTENDANCE_DATABASE_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+    depends_on:
+      - redis
+      - attendance-service
+    networks:
+      - horilla-network
+
+  payroll-service:
+    build:
+      context: .
+      dockerfile: payroll-service/Dockerfile
+    environment:
+      DATABASE_URL: ${PAYROLL_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      PERMISSION_SERVICE_URL: ${PERMISSION_SERVICE_URL}
+    ports:
+      - "8004:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - horilla-network
+
+  payroll-worker:
+    build:
+      context: .
+      dockerfile: payroll-service/Dockerfile
+    command: celery -A app.celery_worker.celery_app worker --loglevel=info -Q events,celery
+    environment:
+      DATABASE_URL: ${PAYROLL_DATABASE_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+    depends_on:
+      - redis
+      - payroll-service
+    networks:
+      - horilla-network
+
+  permission-service:
+    build:
+      context: .
+      dockerfile: permission-service/Dockerfile
+    environment:
+      DATABASE_URL: ${PERMISSION_DATABASE_URL}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+    ports:
+      - "8005:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - horilla-network
+
+  talent-service:
+    build:
+      context: .
+      dockerfile: talent-service/Dockerfile
+    environment:
+      DATABASE_URL: ${TALENT_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      PERMISSION_SERVICE_URL: ${PERMISSION_SERVICE_URL}
+    ports:
+      - "8006:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - horilla-network
+
+  talent-worker:
+    build:
+      context: .
+      dockerfile: talent-service/Dockerfile
+    command: celery -A app.celery_worker.celery_app worker --loglevel=info
+    environment:
+      DATABASE_URL: ${TALENT_DATABASE_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+    depends_on:
+      - redis
+      - talent-service
+    networks:
+      - horilla-network
+
+  platform-service:
+    build:
+      context: .
+      dockerfile: platform-service/Dockerfile
+    environment:
+      DATABASE_URL: ${PLATFORM_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      PERMISSION_SERVICE_URL: ${PERMISSION_SERVICE_URL}
+    ports:
+      - "8007:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - horilla-network
+
+  platform-worker:
+    build:
+      context: .
+      dockerfile: platform-service/Dockerfile
+    command: celery -A app.celery_worker.celery_app worker --loglevel=info
+    environment:
+      DATABASE_URL: ${PLATFORM_DATABASE_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+    depends_on:
+      - redis
+      - platform-service
+    networks:
+      - horilla-network
+
+  ui-service:
+    build:
+      context: .
+      dockerfile: ui-service/Dockerfile
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
+      CORE_SERVICE_URL: ${CORE_SERVICE_URL}
+      ATTENDANCE_SERVICE_URL: ${ATTENDANCE_SERVICE_URL}
+      PAYROLL_SERVICE_URL: ${PAYROLL_SERVICE_URL}
+      PERMISSION_SERVICE_URL: ${PERMISSION_SERVICE_URL}
+      TALENT_SERVICE_URL: ${TALENT_SERVICE_URL}
+      PLATFORM_SERVICE_URL: ${PLATFORM_SERVICE_URL}
+    volumes:
+      - ./ui-service:/app
+    ports:
+      - "8008:8000"
+    depends_on:
+      - identity-service
+      - core-service
+      - attendance-service
+      - payroll-service
+      - permission-service
+      - talent-service
+      - platform-service
+    networks:
+      - horilla-network
+
+volumes:
+  postgres_data:
+
+networks:
+  horilla-network:
+    driver: bridge

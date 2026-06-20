@@ -1,0 +1,167 @@
+{% load static %} {% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tenant Registration - Initialize Database</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'favicons/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicons/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'favicons/favicon-16x16.png' %}">
+    <link rel="stylesheet" href="{% static '/build/css/style.min.css' %}" />
+    <link rel="manifest" href="{% static 'build/manifest.json' %}" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .signup-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            transition: all 0.3s ease;
+        }
+        .signup-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .signup-logo {
+            max-width: 120px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            background-color: #e54f38;
+            border-color: #e54f38;
+            color: #fff;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .btn-primary:hover {
+            background-color: #c93b26;
+            border-color: #c93b26;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(229, 79, 56, 0.3);
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #e54f38;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="signup-card">
+        <div class="signup-header">
+            <img class="signup-logo" src="{% static 'images/ui/auth-logo.png' %}" alt="Horilla Logo" />
+            <h2 class="oh-onboarding-card__title oh-onboarding-card__title--h2">Initialize New Database</h2>
+            <p class="text-muted">Register your company and initialize your workspace</p>
+        </div>
+
+        <div class="oh-alert-container">
+            {% for message in messages %}
+            <div class="oh-alert oh-alert--animated {{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+
+        <form method="post" id="signupForm" class="oh-form-group">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="oh-label" for="company_name">Company Name</label>
+                <input type="text" id="company_name" name="company_name" class="oh-input w-100" placeholder="e.g. Acme Corp" required />
+            </div>
+
+            <div class="form-group">
+                <label class="oh-label" for="schema_name">Schema Name (Internal ID)</label>
+                <input type="text" id="schema_name" name="schema_name" class="oh-input w-100" placeholder="e.g. acme_corp" pattern="[a-zA-Z0-9_]+" title="Only alphanumeric characters and underscores are allowed." required />
+            </div>
+
+            <div class="form-group">
+                <label class="oh-label" for="domain_name">Domain Name</label>
+                <input type="text" id="domain_name" name="domain_name" class="oh-input w-100" placeholder="e.g. acme.localhost" required />
+            </div>
+
+            <div class="form-group">
+                <label class="oh-label" for="admin_email">Admin Email / Username</label>
+                <input type="email" id="admin_email" name="admin_email" class="oh-input w-100" placeholder="e.g. admin@acme.com" required />
+            </div>
+
+            <div class="form-group">
+                <label class="oh-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="oh-input w-100" placeholder="Set admin password" required />
+            </div>
+
+            <button type="submit" class="btn-primary w-100 mt-4">
+                Initialize & Launch Database
+            </button>
+        </form>
+
+        <div class="text-center mt-4">
+            <a href="{% url 'login' %}" class="oh-link oh-link--secondary">Back to Login</a>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <h3 style="color: #333; font-weight: 600;">Initializing database schema...</h3>
+        <p class="text-muted">Loading fixtures, permissions, and seeding mock data. Please do not close or refresh this page.</p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        $('#signupForm').on('submit', function() {
+            // Auto-format schema and domain name
+            var schema = $('#schema_name').val().toLowerCase().replace(/[^a-z0-9_]/g, '');
+            $('#schema_name').val(schema);
+            
+            var domain = $('#domain_name').val().toLowerCase().replace(/[^a-z0-9\.\-]/g, '');
+            $('#domain_name').val(domain);
+
+            // Show loading screen
+            $('#loadingOverlay').css('display', 'flex');
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,109 @@
+services:
+  identity-service:
+    volumes:
+      - ./identity-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  core-service:
+    volumes:
+      - ./core-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  attendance-service:
+    volumes:
+      - ./attendance-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  payroll-service:
+    volumes:
+      - ./payroll-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  permission-service:
+    volumes:
+      - ./permission-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  talent-service:
+    volumes:
+      - ./talent-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  platform-service:
+    volumes:
+      - ./platform-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  ui-service:
+    volumes:
+      - ./ui-service:/app
+    environment:
+      COMPANY_NAME: "Horilla HRMS"
+      CSRF_TRUSTED_ORIGINS: "http://localhost:8000,http://localhost:8008,http://localhost"
+    command: >
+      sh -c "python manage.py migrate --run-syncdb &&
+             python manage.py collectstatic --noinput &&
+             gunicorn horilla_ui.wsgi:application --bind 0.0.0.0:8000 --workers 2 --reload"
+
+  identity-worker:
+    volumes:
+      - ./identity-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+
+  core-worker:
+    volumes:
+      - ./core-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+
+  attendance-worker:
+    volumes:
+      - ./attendance-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+
+  payroll-worker:
+    volumes:
+      - ./payroll-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+
+  talent-worker:
+    volumes:
+      - ./talent-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib
+
+  platform-worker:
+    volumes:
+      - ./platform-service:/app
+      - ./common-lib:/common-lib
+    environment:
+      PYTHONPATH: /common-lib

@@ -1,0 +1,19 @@
+<!-- Breadcrumbs navbar component -->
+{% if breadcrumbs %}
+<nav aria-label="breadcrumb" style="display: flex; align-items: center;">
+    <ol class="breadcrumb" style="display: flex; list-style: none; padding: 0; margin: 0; gap: 4px; font-size: 14px; color: #555;">
+        {% for crumb in breadcrumbs %}
+            {% if not forloop.last %}
+                <li class="breadcrumb-item">
+                    <a href="{{ crumb.url }}" style="color: #e76955; text-decoration: none;">{{ crumb.title }}</a>
+                    <span style="color: #aaa; margin-left: 4px;">›</span>
+                </li>
+            {% else %}
+                <li class="breadcrumb-item active" aria-current="page" style="color: #333; font-weight: 500;">
+                    {{ crumb.title }}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ol>
+</nav>
+{% endif %}

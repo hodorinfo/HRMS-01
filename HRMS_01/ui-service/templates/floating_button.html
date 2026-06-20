@@ -1,0 +1,61 @@
+{% load static i18n %}
+<style>
+    .round { border-radius: 50%; }
+    .fab {
+        transition: all 300ms ease-in-out;
+        width: 56px; height: 56px;
+        background-color: #ff3b38;
+        display: flex; align-items: center; justify-content: center;
+        position: fixed; right: 10px; bottom: 35px;
+        user-select: none; cursor: pointer;
+        color: white; font-size: 2em;
+        box-shadow: 0px 3px 10px rgba(0,0,0,.16);
+        z-index: 10;
+    }
+    .fab i { transition: all 300ms ease-in-out; will-change: transform; }
+    .inner-fabs .fab { width: 40px; height: 40px; right: 20px; bottom: 40px; font-size: 1.5em; will-change: bottom; }
+    .inner-fabs.show .fab:nth-child(1) { bottom: 100px; }
+    .inner-fabs.show .fab:nth-child(2) { bottom: 150px; }
+    .inner-fabs.show .fab:nth-child(3) { bottom: 200px; }
+    .inner-fabs.show + .fab i { transform: rotate(135deg); }
+    .fab:before {
+        content: attr(data-tooltip); transition: opacity 150ms; position: absolute;
+        visibility: hidden; opacity: 0; color: #ececec; right: 50px; top: 25%;
+        background-color: rgba(70,70,70,.9); font-size: .5em; line-height: 1em;
+        display: inline-block; white-space: nowrap; border-radius: 2px;
+        padding: 6px 8px; font-weight: bold;
+    }
+    .fab:hover:before { visibility: visible; opacity: 1; }
+</style>
+
+<div class="inner-fabs">
+    <div id="fab3" class="fab round" data-tooltip="{% trans 'Employees' %}">
+        <a href="{% url 'employee_list' %}" class="text-light" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%;">
+            <ion-icon name="people-outline" style="font-size:22px;"></ion-icon>
+        </a>
+    </div>
+    <div id="fab2" class="fab round" data-tooltip="{% trans 'Leave Requests' %}">
+        <a href="{% url 'leave_list' %}" class="text-light" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%;">
+            <ion-icon name="calendar-outline" style="font-size:22px;"></ion-icon>
+        </a>
+    </div>
+    <div id="fab1-inner" class="fab round" data-tooltip="{% trans 'Add Employee' %}">
+        <a href="{% url 'employee_create' %}" class="text-light" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%;">
+            <ion-icon name="person-add-outline" style="font-size:22px;"></ion-icon>
+        </a>
+    </div>
+</div>
+<div id="fab1" class="fab round" data-tooltip="{% trans 'Quick Action' %}">
+    <ion-icon id="fabIcon" name="add-outline" style="font-size:28px;"></ion-icon>
+</div>
+
+<script>
+    $(document).ready(function() {
+        let fab1 = $("#fab1");
+        let innerFabs = $(".inner-fabs");
+        fab1.on("click", function() { innerFabs.toggleClass("show"); });
+        $(document).on("click", function(e) {
+            if (!$(e.target).closest(".fab").length) { innerFabs.removeClass("show"); }
+        });
+    });
+</script>
