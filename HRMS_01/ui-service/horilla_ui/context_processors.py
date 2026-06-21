@@ -29,8 +29,10 @@ def service_urls(request):
             "menu": "Onboarding",
             "img_src": "images/ui/rocket.svg",
             "submenu": [
-                {"menu": "Onboarding view", "redirect": "/onboarding/"},
-                {"menu": "Candidates view", "redirect": "/onboarding/candidates/"},
+                {"menu": "Dashboard", "redirect": "/onboarding/view-onboarding-dashboard"},
+                {"menu": "Onboarding view", "redirect": "/onboarding/onboarding-view/"},
+                {"menu": "Candidates view", "redirect": "/onboarding/candidates-view/"},
+                {"menu": "Kanban view", "redirect": "/onboarding/kanban-view/"},
             ]
         },
         {

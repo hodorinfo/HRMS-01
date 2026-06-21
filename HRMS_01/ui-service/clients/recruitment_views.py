@@ -162,6 +162,8 @@ DYNAMIC_ROUTE_MAP = [
 ]
 
 
+from .api_clients import TalentClient
+
 def generic_recruitment_view(request, route=""):
     """Route all /recruitment/<route>/ paths to their templates."""
     if not _is_authenticated(request):
@@ -169,16 +171,36 @@ def generic_recruitment_view(request, route=""):
     
     # Normalize trailing slash
     route = route.strip("/")
+    
+    context = _ctx(route)
+    client = TalentClient(token=request.session.get("access_token"))
+    
+    # Phase 1 Integration: Intercept Dashboard and Pipeline to inject live data
+    if route in ("", "dashboard"):
+        try:
+            data = client.get_recruitment_dashboard()
+            context.update(data)
+        except Exception as e:
+            print(f"Failed to fetch recruitment dashboard: {e}")
+            context["api_error"] = str(e)
+            
+    elif route == "pipeline":
+        try:
+            data = client.get_recruitment_pipeline()
+            context.update(data)
+        except Exception as e:
+            print(f"Failed to fetch recruitment pipeline: {e}")
+            context["api_error"] = str(e)
 
     # 1. Exact match
     if route in ROUTE_TEMPLATE_MAP:
         template = ROUTE_TEMPLATE_MAP[route]
-        return render(request, template, _ctx(route))
+        return render(request, template, context)
 
     # 2. Prefix/dynamic match (route with ID like candidate-view/1)
     for prefix, template in DYNAMIC_ROUTE_MAP:
         if route.startswith(prefix.rstrip("/")):
-            return render(request, template, _ctx(route))
+            return render(request, template, context)
 
     # 3. Fallback
     return render(request, "module_view.html", {

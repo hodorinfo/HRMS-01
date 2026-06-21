@@ -12,6 +12,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("recruitment/", include("horilla_ui.recruitment_urls")),
     path("employee/", include("horilla_ui.employee_urls")),
+    path("onboarding/", include("horilla_ui.onboarding_urls")),
 
     # Auth
     path("", views.dashboard, name="dashboard"),
@@ -121,9 +122,6 @@ urlpatterns = [
     path("recruitment/open-jobs/", views.recruitment_list, name="recruitment-open-jobs"),
     path("recruitment/stages/", views.recruitment_list, name="recruitment-stages"),
     path("recruitment/skill-zone/", views.recruitment_list, name="recruitment-skill-zone"),
-
-    # ── Onboarding ───────────────────────────────────────────────────────────
-    path("onboarding/candidates/", views.onboarding_list, name="onboarding-candidates"),
 
     # ── Employee ─────────────────────────────────────────────────────────────
     path("employees/profile/", views.employee_profile_view, name="employee-profile"),

@@ -149,6 +149,18 @@ class TalentClient(BaseAPIClient):
     def list_offboarding(self, page: int = 1) -> dict:
         return self.get("/offboarding", params={"page": page})
 
+    def get_recruitment_dashboard(self) -> dict:
+        return self.get("/recruitment/dashboard")
+
+    def get_recruitment_pipeline(self) -> dict:
+        return self.get("/recruitment/pipeline")
+
+    def get_onboarding_dashboard(self) -> dict:
+        return self.get("/onboarding/dashboard")
+
+    def get_onboarding_kanban(self) -> dict:
+        return self.get("/onboarding/kanban")
+
 
 class PlatformClient(BaseAPIClient):
     service_url = settings.PLATFORM_SERVICE_URL + "/api/v1"
