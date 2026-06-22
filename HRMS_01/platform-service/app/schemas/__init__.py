@@ -43,21 +43,41 @@ class DocumentRequestRead(HorillaSchema):
     id: int
     title: str
     format: str
+    max_size: int = 5
+    description: Optional[str] = None
     is_active: bool = True
 
 class DocumentCreate(BaseModel):
     title: str
     employee_id: int
     document_request_id: Optional[int] = None
+    document: Optional[str] = None
     status: str = "requested"
+    issue_date: Optional[str] = None
+    expiry_date: Optional[str] = None
+    notify_before: int = 1
+    is_digital_asset: bool = False
 
 class DocumentUpdate(BaseModel):
+    title: Optional[str] = None
+    document_request_id: Optional[int] = None
+    document: Optional[str] = None
     status: Optional[str] = None
     reject_reason: Optional[str] = None
+    issue_date: Optional[str] = None
+    expiry_date: Optional[str] = None
+    notify_before: Optional[int] = None
+    is_digital_asset: Optional[bool] = None
 
 class DocumentRead(HorillaSchema):
     id: int
     title: str
     employee_id: int
+    document_request_id: Optional[int] = None
+    document: Optional[str] = None
     status: str
+    issue_date: Optional[str] = None
+    expiry_date: Optional[str] = None
+    notify_before: int = 1
+    is_digital_asset: bool = False
     is_active: bool = True
