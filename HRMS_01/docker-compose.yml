@@ -44,7 +44,6 @@ services:
       - permission-service
       - talent-service
       - platform-service
-      - ui-service
     networks:
       - horilla-network
 
@@ -275,36 +274,6 @@ services:
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
     depends_on:
       - redis
-      - platform-service
-    networks:
-      - horilla-network
-
-  ui-service:
-    build:
-      context: .
-      dockerfile: ui-service/Dockerfile
-    environment:
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
-      DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
-      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
-      CORE_SERVICE_URL: ${CORE_SERVICE_URL}
-      ATTENDANCE_SERVICE_URL: ${ATTENDANCE_SERVICE_URL}
-      PAYROLL_SERVICE_URL: ${PAYROLL_SERVICE_URL}
-      PERMISSION_SERVICE_URL: ${PERMISSION_SERVICE_URL}
-      TALENT_SERVICE_URL: ${TALENT_SERVICE_URL}
-      PLATFORM_SERVICE_URL: ${PLATFORM_SERVICE_URL}
-    volumes:
-      - ./ui-service:/app
-    ports:
-      - "8008:8000"
-    depends_on:
-      - identity-service
-      - core-service
-      - attendance-service
-      - payroll-service
-      - permission-service
-      - talent-service
       - platform-service
     networks:
       - horilla-network
