@@ -1,5 +1,6 @@
 """FastAPI application entrypoint."""
 
+# trigger reload 2
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -21,8 +22,9 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.service_name,
         version="1.0.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        openapi_url="/api/openapi.json",
         lifespan=lifespan,
     )
     app.add_middleware(

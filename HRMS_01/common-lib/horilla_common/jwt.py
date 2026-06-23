@@ -30,6 +30,8 @@ def create_access_token(
     expires_minutes: int = 30,
 ) -> str:
     to_encode = data.copy()
+    if "is_superuser" not in to_encode:
+        to_encode["is_superuser"] = False
     expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
     to_encode.update({"exp": expire, "type": "access"})
     return jwt.encode(to_encode, secret_key, algorithm=algorithm)
@@ -42,6 +44,8 @@ def create_refresh_token(
     expires_days: int = 7,
 ) -> str:
     to_encode = data.copy()
+    if "is_superuser" not in to_encode:
+        to_encode["is_superuser"] = False
     expire = datetime.now(timezone.utc) + timedelta(days=expires_days)
     to_encode.update({"exp": expire, "type": "refresh"})
     return jwt.encode(to_encode, secret_key, algorithm=algorithm)

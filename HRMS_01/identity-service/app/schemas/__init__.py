@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 class HorillaSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+    created_at: Optional[datetime] = None
 
 class UserCreate(BaseModel):
     username: str
@@ -15,7 +16,8 @@ class UserCreate(BaseModel):
     is_staff: bool = False
     is_superuser: bool = False
 
-class UserRead(HorillaSchema):
+class UserRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     username: str
     email: str
@@ -24,6 +26,27 @@ class UserRead(HorillaSchema):
     is_staff: bool
     is_superuser: bool
     is_active: bool = True
+    last_login: Optional[datetime] = None
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+class SetEmployeePasswordRequest(BaseModel):
+    new_password: str
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -79,6 +102,12 @@ class EmployeeUpdate(BaseModel):
     is_active: Optional[bool] = None
     additional_info: Optional[dict] = None
 
+class EmployeeTagRead(HorillaSchema):
+    id: int
+    title: Optional[str] = None
+    color: Optional[str] = None
+    is_active: bool = True
+
 class EmployeeRead(HorillaSchema):
     id: int
     badge_id: Optional[str] = None
@@ -126,6 +155,7 @@ class EmployeeWorkInformationCreate(BaseModel):
     salary_hour: Optional[int] = 0
     additional_info: Optional[dict] = None
     experience: Optional[float] = 0
+    tag_ids: Optional[list[int]] = None
 
 class EmployeeWorkInformationUpdate(EmployeeWorkInformationCreate):
     employee_id: Optional[int] = None
@@ -150,6 +180,7 @@ class EmployeeWorkInformationRead(HorillaSchema):
     salary_hour: Optional[int] = None
     additional_info: Optional[dict] = None
     experience: Optional[float] = None
+    tags: Optional[list[EmployeeTagRead]] = None
 
 class EmployeeBankDetailsCreate(BaseModel):
     employee_id: int
@@ -247,3 +278,142 @@ class AzureApiRead(HorillaSchema):
     outlook_display_name: Optional[str] = None
     company_id: Optional[int] = None
     is_primary: bool = False
+
+class EmployeeNoteCreate(BaseModel):
+    employee_id: int
+    description: Optional[str] = None
+    updated_by_id: Optional[int] = None
+
+class EmployeeNoteUpdate(BaseModel):
+    description: Optional[str] = None
+    updated_by_id: Optional[int] = None
+
+class EmployeeNoteRead(HorillaSchema):
+    id: int
+    employee_id: int
+    description: Optional[str] = None
+    updated_by_id: Optional[int] = None
+    is_active: bool = True
+
+class EmployeeTagCreate(BaseModel):
+    title: Optional[str] = None
+    color: Optional[str] = None
+
+class EmployeeTagUpdate(EmployeeTagCreate):
+    pass
+
+
+class ActiontypeCreate(BaseModel):
+    title: str
+    action_type: str
+    block_option: bool = False
+
+class ActiontypeUpdate(BaseModel):
+    title: Optional[str] = None
+    action_type: Optional[str] = None
+    block_option: Optional[bool] = None
+
+class ActiontypeRead(HorillaSchema):
+    id: int
+    title: str
+    action_type: str
+    block_option: bool
+    is_active: bool = True
+
+class DisciplinaryActionCreate(BaseModel):
+    employee_id: int
+    action_id: int
+    description: Optional[str] = None
+    unit_in: str = "days"
+    days: Optional[int] = 1
+    hours: str = "00:00"
+    start_date: Optional[date] = None
+    attachment: Optional[str] = None
+
+class DisciplinaryActionUpdate(BaseModel):
+    employee_id: Optional[int] = None
+    action_id: Optional[int] = None
+    description: Optional[str] = None
+    unit_in: Optional[str] = None
+    days: Optional[int] = None
+    hours: Optional[str] = None
+    start_date: Optional[date] = None
+    attachment: Optional[str] = None
+
+class DisciplinaryActionRead(HorillaSchema):
+    id: int
+    employee_id: int
+    action_id: int
+    description: Optional[str] = None
+    unit_in: str
+    days: Optional[int] = None
+    hours: str
+    start_date: Optional[date] = None
+    attachment: Optional[str] = None
+    is_active: bool = True
+
+class BonusPointCreate(BaseModel):
+    employee_id: Optional[int] = None
+    points: int = 0
+    encashment_condition: Optional[str] = None
+    redeeming_points: Optional[int] = None
+    reason: Optional[str] = None
+
+class BonusPointUpdate(BaseModel):
+    employee_id: Optional[int] = None
+    points: Optional[int] = None
+    encashment_condition: Optional[str] = None
+    redeeming_points: Optional[int] = None
+    reason: Optional[str] = None
+
+class BonusPointRead(HorillaSchema):
+    id: int
+    employee_id: Optional[int] = None
+    points: int
+    encashment_condition: Optional[str] = None
+    redeeming_points: Optional[int] = None
+    reason: Optional[str] = None
+    is_active: bool = True
+
+class PolicyCreate(BaseModel):
+    title: str
+    body: str
+    is_visible_to_all: bool = True
+
+class PolicyUpdate(BaseModel):
+    title: Optional[str] = None
+    body: Optional[str] = None
+    is_visible_to_all: Optional[bool] = None
+
+class PolicyRead(HorillaSchema):
+    id: int
+    title: str
+    body: str
+    is_visible_to_all: bool
+    is_active: bool = True
+
+class EmployeeGeneralSettingCreate(BaseModel):
+    badge_id_prefix: str = "EMP"
+    company_id: Optional[int] = None
+
+class EmployeeGeneralSettingUpdate(BaseModel):
+    badge_id_prefix: Optional[str] = None
+    company_id: Optional[int] = None
+
+class EmployeeGeneralSettingRead(HorillaSchema):
+    id: int
+    badge_id_prefix: str
+    company_id: Optional[int] = None
+    is_active: bool = True
+
+class ProfileEditFeatureCreate(BaseModel):
+    is_enabled: bool = False
+
+class ProfileEditFeatureUpdate(BaseModel):
+    is_enabled: Optional[bool] = None
+
+class ProfileEditFeatureRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    is_enabled: bool
+    is_active: bool = True

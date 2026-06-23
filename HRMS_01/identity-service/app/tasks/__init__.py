@@ -14,3 +14,17 @@ def handle_department_deleted(payload: dict):
     department_id = payload.get("department_id")
     # Cross-service: update work info records via internal API or direct DB in identity DB
     return {"status": "processed", "department_id": department_id}
+
+@celery_app.task(**task_retry_kwargs())
+def send_password_reset_email_task(email: str, token: str):
+    """Send password reset email."""
+    # In a real system, you would use an email library like aiosmtplib or sendgrid
+    print(f"MOCK: Sending password reset email to {email} with token {token}")
+    return {"status": "sent", "email": email}
+
+@celery_app.task(**task_retry_kwargs())
+def send_employee_invitation_email_task(email: str, token: str):
+    """Send employee invitation email."""
+    # In a real system, you would use an email library
+    print(f"MOCK: Sending employee invitation email to {email} with token {token}")
+    return {"status": "sent", "email": email}

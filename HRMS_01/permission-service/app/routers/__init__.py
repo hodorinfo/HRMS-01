@@ -21,7 +21,11 @@ api_router.include_router(health.router)
 
 @api_router.get("/permissions", response_model=list[PermissionRead])
 async def list_permissions(db: DbSession, _user: CurrentUser):
-    result = await db.execute(select(Permission).where(Permission.is_active.is_(True)))
+    result = await db.execute(
+        select(Permission)
+        .where(Permission.is_active.is_(True))
+        .order_by(Permission.module, Permission.action)
+    )
     return result.scalars().all()
 
 
@@ -51,7 +55,14 @@ async def create_role(data: RoleCreate, db: DbSession, _user: CurrentUser):
     role = Role(name=data.name, description=data.description)
     if data.permission_ids:
         perms = await db.execute(select(Permission).where(Permission.id.in_(data.permission_ids)))
-        role.permissions = list(perms.scalars().all())
+        found_perms = list(perms.scalars().all())
+        if len(found_perms) != len(data.permission_ids):
+            from fastapi import HTTPException, status
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="One or more permission IDs are invalid"
+            )
+        role.permissions = found_perms
     db.add(role)
     await db.flush()
     await db.refresh(role, ["permissions"])

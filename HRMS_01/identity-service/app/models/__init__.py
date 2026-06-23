@@ -3,15 +3,16 @@
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, JSON, String, Text, Table, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from horilla_common.base import Base, HorillaBaseMixin
 
 
-class User(Base, HorillaBaseMixin):
+class User(Base):
     __tablename__ = "auth_user"
 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(150), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(254), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
@@ -20,8 +21,14 @@ class User(Base, HorillaBaseMixin):
     is_staff: Mapped[bool] = mapped_column(Boolean, default=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
     is_new_employee: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
+
+employee_tags = Table("employee_employeeworkinformation_tags", Base.metadata,
+    Column("employeeworkinformation_id", Integer, ForeignKey("employee_employeeworkinformation.id", ondelete="CASCADE"), primary_key=True),
+    Column("employeetag_id", Integer, ForeignKey("employee_employeetag.id", ondelete="CASCADE"), primary_key=True)
+)
 
 class Employee(Base):
     __tablename__ = "employee_employee"
@@ -100,6 +107,7 @@ class EmployeeWorkInformation(Base):
     employee: Mapped[Optional["Employee"]] = relationship(
         "Employee", back_populates="work_info", foreign_keys=[employee_id]
     )
+    tags: Mapped[list["EmployeeTag"]] = relationship("EmployeeTag", secondary=employee_tags)
 
 
 class EmployeeBankDetails(Base, HorillaBaseMixin):
@@ -154,6 +162,7 @@ class Actiontype(Base, HorillaBaseMixin):
 
 class DisciplinaryAction(Base, HorillaBaseMixin):
     __tablename__ = "employee_disciplinaryaction"
+    employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("employee_employee.id", ondelete="CASCADE"))
     action_id: Mapped[int] = mapped_column(Integer, ForeignKey("employee_actiontype.id", ondelete="CASCADE"))
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     unit_in: Mapped[str] = mapped_column(String(10), default="days")
@@ -165,13 +174,15 @@ class DisciplinaryAction(Base, HorillaBaseMixin):
 
 class EmployeeGeneralSetting(Base, HorillaBaseMixin):
     __tablename__ = "employee_employeegeneralsetting"
-    badge_id_prefix: Mapped[str] = mapped_column(String(5), default="PEP")
+    badge_id_prefix: Mapped[str] = mapped_column(String(5), default="EMP")
     company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 
-class ProfileEditFeature(Base, HorillaBaseMixin):
+class ProfileEditFeature(Base):
     __tablename__ = "employee_profileeditfeature"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class DefaultAccessibility(Base, HorillaBaseMixin):
