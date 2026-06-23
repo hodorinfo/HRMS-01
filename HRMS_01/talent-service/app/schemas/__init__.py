@@ -5,52 +5,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 class HorillaSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-class RecruitmentCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    job_position_id: Optional[int] = None
-    vacancy: int = 0
-    company_id: Optional[int] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-
-class RecruitmentUpdate(BaseModel):
-    title: Optional[str] = None
-    closed: Optional[bool] = None
-    is_published: Optional[bool] = None
-
-class RecruitmentRead(HorillaSchema):
-    id: int
-    title: str
-    vacancy: int
-    closed: bool = False
-    is_published: bool = False
-    is_active: bool = True
-
-class CandidateCreate(BaseModel):
-    name: str
-    recruitment_id: int
-    email: EmailStr
-    job_position_id: Optional[int] = None
-    stage_id: Optional[int] = None
-    mobile: Optional[str] = None
-    source: str = "application"
-
-class CandidateUpdate(BaseModel):
-    stage_id: Optional[int] = None
-    hired: Optional[bool] = None
-    converted: Optional[bool] = None
-    offer_letter_status: Optional[str] = None
-
-class CandidateRead(HorillaSchema):
-    id: int
-    name: str
-    recruitment_id: int
-    email: str
-    stage_id: Optional[int] = None
-    hired: bool = False
-    converted: bool = False
-    is_active: bool = True
+# Legacy recruitment schemas removed
 
 class ObjectiveCreate(BaseModel):
     title: str
@@ -120,3 +75,157 @@ class ResignationLetterRead(HorillaSchema):
     planned_to_leave_on: date
     status: str
     is_active: bool = True
+
+class OnboardingStageCreate(BaseModel):
+    recruitment_id: int
+    sequence: int = 0
+    is_final_stage: bool = False
+
+class OnboardingStageRead(HorillaSchema):
+    id: int
+    recruitment_id: int
+    sequence: int
+    is_final_stage: bool
+
+class OnboardingTaskCreate(BaseModel):
+    stage_id: int
+
+class OnboardingTaskRead(HorillaSchema):
+    id: int
+    stage_id: int
+
+class CandidateStageCreate(BaseModel):
+    candidate_id: int
+    onboarding_stage_id: int
+    onboarding_end_date: Optional[date] = None
+    sequence: int = 0
+
+class CandidateStageRead(HorillaSchema):
+    id: int
+    candidate_id: int
+    onboarding_stage_id: int
+    onboarding_end_date: Optional[date] = None
+    sequence: int
+
+class CandidateTaskCreate(BaseModel):
+    candidate_id: int
+    stage_id: int
+    onboarding_task_id: int
+    status: str = "todo"
+
+class CandidateTaskRead(HorillaSchema):
+    id: int
+    candidate_id: int
+    stage_id: int
+    onboarding_task_id: int
+    status: str
+
+class OnboardingPortalCreate(BaseModel):
+    candidate_id: int
+    token: str
+    used: bool = False
+    count: int = 0
+
+class OnboardingPortalRead(HorillaSchema):
+    id: int
+    candidate_id: int
+    token: str
+    used: bool
+    count: int
+
+# --- MISSING PMS MODELS ---
+class PeriodCreate(BaseModel):
+    period_name: str
+    start_date: date
+    end_date: date
+
+class PeriodRead(HorillaSchema):
+    id: int
+    period_name: str
+    start_date: date
+    end_date: date
+    is_active: bool = True
+
+class KeyResultCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    progress_type: str = "%"
+    target_value: int = 0
+    duration: int = 0
+    company_id: Optional[int] = None
+
+class KeyResultRead(HorillaSchema):
+    id: int
+    title: str
+    progress_type: str
+    target_value: int
+    duration: int
+    archive: bool = False
+    is_active: bool = True
+
+# --- MISSING OFFBOARDING MODELS ---
+class OffboardingStageCreate(BaseModel):
+    title: str
+    type: str
+    offboarding_id: int
+    sequence: int = 0
+
+class OffboardingStageRead(HorillaSchema):
+    id: int
+    title: str
+    type: str
+    offboarding_id: int
+    sequence: int
+    is_active: bool = True
+
+class OffboardingEmployeeCreate(BaseModel):
+    employee_id: int
+    stage_id: int
+    notice_period: int = 0
+    unit: str = "day"
+    notice_period_starts: Optional[date] = None
+    notice_period_ends: Optional[date] = None
+
+class OffboardingEmployeeRead(HorillaSchema):
+    id: int
+    employee_id: int
+    stage_id: int
+    notice_period: int
+    unit: str
+    is_active: bool = True
+
+class OffboardingTaskCreate(BaseModel):
+    title: str
+    stage_id: int
+
+class OffboardingTaskRead(HorillaSchema):
+    id: int
+    title: str
+    stage_id: int
+    is_active: bool = True
+
+class EmployeeTaskCreate(BaseModel):
+    employee_id: int
+    status: str = "todo"
+    task_id: int
+
+class EmployeeTaskRead(HorillaSchema):
+    id: int
+    employee_id: int
+    status: str
+    task_id: int
+    is_active: bool = True
+
+from .phm_recruitment import (
+    PHMHiringRequestCreate, PHMHiringRequestUpdate, PHMHiringRequestRead,
+    PHMPositionPrepCreate, PHMPositionPrepUpdate, PHMPositionPrepRead,
+    PHMIdealCandidateProfileCreate, PHMIdealCandidateProfileUpdate, PHMIdealCandidateProfileRead,
+    PHMInterviewQuestionBankCreate, PHMInterviewQuestionBankUpdate, PHMInterviewQuestionBankRead,
+    PHMSourcingChannelCreate, PHMSourcingChannelUpdate, PHMSourcingChannelRead,
+    PHMJobDescriptionCreate, PHMJobDescriptionUpdate, PHMJobDescriptionRead,
+    PHMPipelineStageCreate, PHMPipelineStageUpdate, PHMPipelineStageRead,
+    PHMCandidateCreate, PHMCandidateUpdate, PHMCandidateRead,
+    PHMCandidateScreeningCreate, PHMCandidateScreeningUpdate, PHMCandidateScreeningRead,
+    PHMTelephonicRoundCreate, PHMTelephonicRoundUpdate, PHMTelephonicRoundRead,
+    PHMHiringErrorFlagCreate, PHMHiringErrorFlagUpdate, PHMHiringErrorFlagRead
+)

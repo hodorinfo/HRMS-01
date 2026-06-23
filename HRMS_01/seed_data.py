@@ -9,6 +9,8 @@ from sqlalchemy.orm import sessionmaker
 IDENTITY_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/identity_db"
 CORE_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/core_db"
 ATTENDANCE_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/attendance_db"
+PAYROLL_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/payroll_db"
+PERMISSION_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/permission_db"
 
 def hash_pw(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -127,14 +129,106 @@ async def seed_attendance():
         """))
         await db.execute(text("SELECT setval('leave_leavetype_id_seq', (SELECT MAX(id) FROM leave_leavetype))"))
         
+        # General Settings
+        await db.execute(text("TRUNCATE attendance_attendancegeneralsetting CASCADE"))
+        await db.execute(text("""
+            INSERT INTO attendance_attendancegeneralsetting (time_runner, enable_check_in, company_id, is_active) VALUES 
+                (true, true, 1, true)
+        """))
+        
+        # Available Leave for users
+        await db.execute(text("TRUNCATE leave_availableleave CASCADE"))
+        await db.execute(text("""
+            INSERT INTO leave_availableleave (employee_id, leave_type_id, available_days, carryforward_days, total_leave_days, is_active) VALUES 
+                (1, 1, 12, 0, 12, true),
+                (1, 2, 10, 0, 10, true),
+                (2, 1, 12, 0, 12, true),
+                (3, 1, 12, 0, 12, true),
+                (4, 1, 12, 0, 12, true),
+                (5, 1, 12, 0, 12, true)
+        """))
+
+        # Attendance Timesheets (Work Records)
+        await db.execute(text("TRUNCATE attendance_attendance CASCADE"))
+        await db.execute(text("""
+            INSERT INTO attendance_attendance (employee_id, attendance_date, minimum_hour, attendance_overtime, attendance_overtime_approve, attendance_validated, approved_overtime_second, is_validate_request, is_bulk_request, is_validate_request_approved, is_holiday, is_active) VALUES 
+                (1, '2026-06-20', '08:00:00', '00:00:00', false, true, 0, false, false, false, false, true),
+                (2, '2026-06-20', '08:00:00', '00:00:00', false, true, 0, false, false, false, false, true),
+                (3, '2026-06-20', '08:00:00', '00:00:00', false, true, 0, false, false, false, false, true),
+                (1, '2026-06-21', '08:00:00', '00:00:00', false, true, 0, false, false, false, false, true),
+                (2, '2026-06-21', '08:00:00', '00:00:00', false, true, 0, false, false, false, false, true)
+        """))
         await db.commit()
     await engine.dispose()
+
+async def seed_payroll():
+    print("Seeding payroll_db...")
+    engine, Session = await get_db_session(PAYROLL_DB_URL)
+    async with Session() as db:
+        await db.execute(text("TRUNCATE payroll_contract, payroll_filingstatus CASCADE"))
+        for tbl in ['payroll_filingstatus', 'payroll_contract']:
+            await db.execute(text(f"ALTER SEQUENCE IF EXISTS {tbl}_id_seq RESTART WITH 1"))
+        
+        # Filing Status
+        await db.execute(text("""
+            INSERT INTO payroll_filingstatus (id, filing_status, based_on, use_py, description, is_active) VALUES 
+                (1, 'Single', 'amount', false, 'Single or married filing separately', true),
+                (2, 'Married', 'amount', false, 'Married filing jointly', true)
+        """))
+        
+        # Default contracts for seeded employees
+        await db.execute(text("""
+            INSERT INTO payroll_contract (contract_name, employee_id, contract_start_date, wage_type, pay_frequency, wage, filing_status_id, contract_status, deduct_leave_from_basic_pay, calculate_daily_leave_amount, deduction_for_one_leave_amount, is_active) VALUES 
+                ('Contract for Admin', 1, '2024-01-01', 'Hourly', 'Monthly', 150000, 1, 'Active', false, false, 0, true),
+                ('Contract for John', 2, '2024-02-15', 'Hourly', 'Monthly', 120000, 2, 'Active', false, false, 0, true),
+                ('Contract for Jane', 3, '2024-03-01', 'Hourly', 'Monthly', 80000, 1, 'Active', false, false, 0, true),
+                ('Contract for Bob', 4, '2024-04-10', 'Hourly', 'Monthly', 90000, 1, 'Active', false, false, 0, true),
+                ('Contract for Alice', 5, '2024-05-20', 'Hourly', 'Monthly', 85000, 2, 'Active', false, false, 0, true)
+        """))
+
+        await db.execute(text("SELECT setval('payroll_filingstatus_id_seq', (SELECT MAX(id) FROM payroll_filingstatus))"))
+        await db.execute(text("SELECT setval('payroll_contract_id_seq', (SELECT MAX(id) FROM payroll_contract))"))
+        await db.commit()
+    await engine.dispose()
+
+async def seed_permission():
+    print("Seeding permission_db...")
+    engine, Session = await get_db_session(PERMISSION_DB_URL)
+    async with Session() as db:
+        await db.execute(text("TRUNCATE permission_user_roles, permission_role CASCADE"))
+        for tbl in ['permission_role']:
+            await db.execute(text(f"ALTER SEQUENCE IF EXISTS {tbl}_id_seq RESTART WITH 1"))
+        
+        # Roles
+        await db.execute(text("""
+            INSERT INTO permission_role (id, name, description, is_system, is_active) VALUES 
+                (1, 'Admin', 'Super Administrator', true, true),
+                (2, 'Manager', 'Department Manager', false, true),
+                (3, 'Employee', 'Regular Employee', false, true)
+        """))
+        
+        # Map roles to seeded auth_user IDs (from identity_db)
+        await db.execute(text("""
+            INSERT INTO permission_user_roles (user_id, role_id) VALUES 
+                (1, 1), 
+                (2, 2), 
+                (3, 3), 
+                (4, 3), 
+                (5, 3)  
+        """))
+
+        await db.execute(text("SELECT setval('permission_role_id_seq', (SELECT MAX(id) FROM permission_role))"))
+        await db.commit()
+    await engine.dispose()
+
 
 async def main():
     print("Starting database seeding...")
     await seed_core()
     await seed_identity()
     await seed_attendance()
+    await seed_payroll()
+    await seed_permission()
     print("\n✅ SEED COMPLETE!")
     print("\n📋 Login Credentials:")
     print("=" * 50)

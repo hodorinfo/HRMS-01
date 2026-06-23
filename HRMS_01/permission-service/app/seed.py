@@ -17,7 +17,7 @@ async def seed_permissions(db: AsyncSession):
             codename = f"{action}_{module.lower()}"
             existing = await db.execute(select(Permission).where(Permission.codename == codename))
             if not existing.scalar_one_or_none():
-                db.add(Permission(module=module, action=action, codename=codename, name=f"Can {action} {module}", is_system=True))
+                db.add(Permission(module=module, action=action, codename=codename, name=f"Can {action} {module}"))
     await db.flush()
     for role_name, actions in DEFAULT_ROLES.items():
         existing = await db.execute(select(Role).where(Role.name == role_name))

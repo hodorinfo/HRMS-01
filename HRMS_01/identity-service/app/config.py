@@ -24,4 +24,7 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if settings.database_url.endswith("/horilla"):
+        settings.database_url = settings.database_url[:-8] + "/identity_db"
+    return settings

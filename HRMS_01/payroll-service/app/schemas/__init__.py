@@ -110,3 +110,43 @@ class LoanAccountRead(HorillaSchema):
     loan_amount: float
     settled: bool = False
     is_active: bool = True
+
+class FilingStatusCreate(BaseModel):
+    filing_status: str
+    based_on: str
+    use_py: bool = False
+    python_code: Optional[str] = None
+    description: Optional[str] = None
+    company_id: Optional[int] = None
+
+class FilingStatusUpdate(BaseModel):
+    filing_status: Optional[str] = None
+    based_on: Optional[str] = None
+    use_py: Optional[bool] = None
+
+class FilingStatusRead(HorillaSchema):
+    id: int
+    filing_status: str
+    based_on: str
+    use_py: bool
+    is_active: bool = True
+
+class ReimbursementCreate(BaseModel):
+    title: str
+    type: str
+    employee_id: int
+    amount: float = 0
+    status: str = "requested"
+
+class ReimbursementUpdate(BaseModel):
+    status: Optional[str] = None
+    amount: Optional[float] = None
+
+class ReimbursementRead(HorillaSchema):
+    id: int
+    title: str
+    type: str
+    employee_id: int
+    amount: float
+    status: str
+    is_active: bool = True

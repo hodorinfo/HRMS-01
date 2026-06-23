@@ -16,7 +16,7 @@ class FilingStatus(Base, HorillaBaseMixin):
 class Contract(Base, HorillaBaseMixin):
     __tablename__ = "payroll_contract"
     contract_name: Mapped[str] = mapped_column(String(100))
-    employee_id: Mapped[int] = mapped_column(Integer)
+    employee_id: Mapped[int] = mapped_column(Integer, unique=True)
     contract_start_date: Mapped[date] = mapped_column(Date)
     contract_end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     wage_type: Mapped[str] = mapped_column(String(20))

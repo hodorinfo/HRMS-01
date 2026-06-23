@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from horilla_common.schemas import PaginatedResponse
 
@@ -26,7 +27,7 @@ def create_crud_router(
     module: str,
     id_field: str = "id",
 ) -> APIRouter:
-    router = APIRouter(prefix=prefix)
+    router = APIRouter(prefix=prefix, tags=[module])
 
     @router.get("", response_model=PaginatedResponse[read_schema])
     async def list_items(
@@ -70,8 +71,12 @@ def create_crud_router(
         if hasattr(item, "created_by_id"):
             item.created_by_id = user.user_id
         db.add(item)
-        await db.flush()
-        await db.refresh(item)
+        try:
+            await db.flush()
+            await db.refresh(item)
+        except IntegrityError as e:
+            await db.rollback()
+            raise HTTPException(status_code=400, detail="This item already exists or violates a unique constraint.")
         return read_schema.model_validate(item)
 
     @router.put("/{item_id}", response_model=read_schema)
@@ -89,8 +94,12 @@ def create_crud_router(
             setattr(item, key, value)
         if hasattr(item, "modified_by_id"):
             item.modified_by_id = user.user_id
-        await db.flush()
-        await db.refresh(item)
+        try:
+            await db.flush()
+            await db.refresh(item)
+        except IntegrityError as e:
+            await db.rollback()
+            raise HTTPException(status_code=400, detail="This update violates a unique constraint.")
         return read_schema.model_validate(item)
 
     @router.delete("/{item_id}", status_code=204)

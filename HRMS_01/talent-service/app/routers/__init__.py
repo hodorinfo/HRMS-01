@@ -2,27 +2,53 @@ from fastapi import APIRouter
 from horilla_common.crud import create_crud_router
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models import Recruitment, Candidate, Objective, EmployeeObjective, Feedback, Offboarding, ResignationLetter
+from app.models import (
+    Objective, EmployeeObjective, Feedback, Offboarding, ResignationLetter, 
+    OnboardingStage, OnboardingTask, CandidateStage, CandidateTask, OnboardingPortal,
+    Period, KeyResult, OffboardingStage, OffboardingEmployee, OffboardingTask, EmployeeTask
+)
 from app.schemas import (
-    RecruitmentCreate, RecruitmentUpdate, RecruitmentRead,
-    CandidateCreate, CandidateUpdate, CandidateRead,
-    ObjectiveCreate, ObjectiveCreate, ObjectiveRead,
-    EmployeeObjectiveCreate, EmployeeObjectiveCreate, EmployeeObjectiveRead,
-    FeedbackCreate, FeedbackCreate, FeedbackRead,
-    OffboardingCreate, OffboardingCreate, OffboardingRead,
-    ResignationLetterCreate, ResignationLetterCreate, ResignationLetterRead,
+    ObjectiveCreate, ObjectiveRead,
+    EmployeeObjectiveCreate, EmployeeObjectiveRead,
+    FeedbackCreate, FeedbackRead,
+    OffboardingCreate, OffboardingRead,
+    ResignationLetterCreate, ResignationLetterRead,
+    OnboardingStageCreate, OnboardingStageRead,
+    OnboardingTaskCreate, OnboardingTaskRead,
+    CandidateStageCreate, CandidateStageRead,
+    CandidateTaskCreate, CandidateTaskRead,
+    OnboardingPortalCreate, OnboardingPortalRead,
+    PeriodCreate, PeriodRead,
+    KeyResultCreate, KeyResultRead,
+    OffboardingStageCreate, OffboardingStageRead,
+    OffboardingEmployeeCreate, OffboardingEmployeeRead,
+    OffboardingTaskCreate, OffboardingTaskRead,
+    EmployeeTaskCreate, EmployeeTaskRead,
 )
 from app.routers import health
 
 api_router = APIRouter()
 api_router.include_router(health.router)
-for prefix, model, create, update, read in [
-    ("/recruitment", Recruitment, RecruitmentCreate, RecruitmentUpdate, RecruitmentRead),
-    ("/candidates", Candidate, CandidateCreate, CandidateUpdate, CandidateRead),
-    ("/objectives", Objective, ObjectiveCreate, ObjectiveRead, ObjectiveRead), # TODO: Fix update schema
-    ("/employee-objectives", EmployeeObjective, EmployeeObjectiveCreate, EmployeeObjectiveRead, EmployeeObjectiveRead), # TODO: Fix update schema
-    ("/feedback", Feedback, FeedbackCreate, FeedbackRead, FeedbackRead), # TODO: Fix update schema
-    ("/offboarding", Offboarding, OffboardingCreate, OffboardingRead, OffboardingRead), # TODO: Fix update schema
-    ("/resignation-letters", ResignationLetter, ResignationLetterCreate, ResignationLetterRead, ResignationLetterRead), # TODO: Fix update schema
+for prefix, model, create, update, read, module_name in [
+    ("/objectives", Objective, ObjectiveCreate, ObjectiveRead, ObjectiveRead, "PMS (OKR)"), 
+    ("/employee-objectives", EmployeeObjective, EmployeeObjectiveCreate, EmployeeObjectiveRead, EmployeeObjectiveRead, "PMS (OKR)"), 
+    ("/periods", Period, PeriodCreate, PeriodRead, PeriodRead, "PMS (OKR)"),
+    ("/key-results", KeyResult, KeyResultCreate, KeyResultRead, KeyResultRead, "PMS (OKR)"),
+    ("/feedback", Feedback, FeedbackCreate, FeedbackRead, FeedbackRead, "PMS (Feedback)"), 
+    ("/offboarding", Offboarding, OffboardingCreate, OffboardingRead, OffboardingRead, "Offboarding"), 
+    ("/offboarding-stages", OffboardingStage, OffboardingStageCreate, OffboardingStageRead, OffboardingStageRead, "Offboarding"),
+    ("/offboarding-employees", OffboardingEmployee, OffboardingEmployeeCreate, OffboardingEmployeeRead, OffboardingEmployeeRead, "Offboarding"),
+    ("/offboarding-tasks", OffboardingTask, OffboardingTaskCreate, OffboardingTaskRead, OffboardingTaskRead, "Offboarding"),
+    ("/employee-tasks", EmployeeTask, EmployeeTaskCreate, EmployeeTaskRead, EmployeeTaskRead, "Offboarding"),
+    ("/resignation-letters", ResignationLetter, ResignationLetterCreate, ResignationLetterRead, ResignationLetterRead, "Offboarding"), 
+    ("/onboarding-stages", OnboardingStage, OnboardingStageCreate, OnboardingStageRead, OnboardingStageRead, "Onboarding"),
+    ("/onboarding-tasks", OnboardingTask, OnboardingTaskCreate, OnboardingTaskRead, OnboardingTaskRead, "Onboarding"),
+    ("/candidate-stages", CandidateStage, CandidateStageCreate, CandidateStageRead, CandidateStageRead, "Onboarding"),
+    ("/candidate-tasks", CandidateTask, CandidateTaskCreate, CandidateTaskRead, CandidateTaskRead, "Onboarding"),
+    ("/onboarding-portals", OnboardingPortal, OnboardingPortalCreate, OnboardingPortalRead, OnboardingPortalRead, "Onboarding"),
 ]:
-    api_router.include_router(create_crud_router(prefix, model, create, update, read, get_db, get_current_user, "recruitment"))
+    api_router.include_router(create_crud_router(prefix, model, create, update, read, get_db, get_current_user, module_name))
+
+# --- THESE ARE THE NEW RECRUITMENT ENDPOINTS (PHM 2.0) ---
+from app.routers import phm_recruitment
+api_router.include_router(phm_recruitment.router)

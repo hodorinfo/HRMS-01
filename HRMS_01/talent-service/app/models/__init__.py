@@ -4,80 +4,8 @@ from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from horilla_common.base import Base, HorillaBaseMixin
 
-# Recruitment
-class Skill(Base, HorillaBaseMixin):
-    __tablename__ = "recruitment_skill"
-    title: Mapped[str] = mapped_column(String(100))
+# Legacy recruitment models removed.
 
-class SurveyTemplate(Base, HorillaBaseMixin):
-    __tablename__ = "recruitment_surveytemplate"
-    title: Mapped[str] = mapped_column(String(100), unique=True)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    is_general_template: Mapped[bool] = mapped_column(Boolean, default=False)
-    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
-class Recruitment(Base, HorillaBaseMixin):
-    __tablename__ = "recruitment_recruitment"
-    title: Mapped[str] = mapped_column(String(100))
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    is_event_based: Mapped[bool] = mapped_column(Boolean, default=False)
-    closed: Mapped[bool] = mapped_column(Boolean, default=False)
-    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
-    job_position_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    vacancy: Mapped[int] = mapped_column(Integer, default=0)
-    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    publish_in_linkedin: Mapped[bool] = mapped_column(Boolean, default=False)
-
-class Stage(Base, HorillaBaseMixin):
-    __tablename__ = "recruitment_stage"
-    recruitment_id: Mapped[int] = mapped_column(Integer, ForeignKey("recruitment_recruitment.id", ondelete="CASCADE"))
-    stage: Mapped[str] = mapped_column(String(50))
-    stage_type: Mapped[str] = mapped_column(String(20), default="initial")
-    sequence: Mapped[int] = mapped_column(Integer, default=0)
-
-class Candidate(Base, HorillaBaseMixin):
-    __tablename__ = "recruitment_candidate"
-    name: Mapped[str] = mapped_column(String(100))
-    recruitment_id: Mapped[int] = mapped_column(Integer, ForeignKey("recruitment_recruitment.id"))
-    job_position_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    stage_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("recruitment_stage.id"), nullable=True)
-    converted_employee_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    schedule_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    email: Mapped[str] = mapped_column(String(254))
-    mobile: Mapped[Optional[str]] = mapped_column(String(25), nullable=True)
-    resume: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    referral_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    country: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    state: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    city: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
-    zip: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    dob: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    gender: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    source: Mapped[str] = mapped_column(String(20), default="application")
-    start_onboard: Mapped[bool] = mapped_column(Boolean, default=False)
-    hired: Mapped[bool] = mapped_column(Boolean, default=False)
-    canceled: Mapped[bool] = mapped_column(Boolean, default=False)
-    converted: Mapped[bool] = mapped_column(Boolean, default=False)
-    joining_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    sequence: Mapped[int] = mapped_column(Integer, default=0)
-    offer_letter_status: Mapped[str] = mapped_column(String(20), default="not_sent")
-
-class RejectReason(Base, HorillaBaseMixin):
-    __tablename__ = "recruitment_rejectreason"
-    title: Mapped[str] = mapped_column(String(50))
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
-class InterviewSchedule(Base, HorillaBaseMixin):
-    __tablename__ = "recruitment_interviewschedule"
-    candidate_id: Mapped[int] = mapped_column(Integer, ForeignKey("recruitment_candidate.id"))
-    interview_date: Mapped[date] = mapped_column(Date)
-    interview_time: Mapped[str] = mapped_column(String(8))
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    completed: Mapped[bool] = mapped_column(Boolean, default=False)
 
 # PMS
 class Period(Base, HorillaBaseMixin):
@@ -208,3 +136,9 @@ class EmployeeTask(Base, HorillaBaseMixin):
     employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("offboarding_offboardingemployee.id"))
     status: Mapped[str] = mapped_column(String(20), default="todo")
     task_id: Mapped[int] = mapped_column(Integer, ForeignKey("offboarding_offboardingtask.id"))
+
+from .phm_recruitment import (
+    PHMHiringRequest, PHMPositionPrep, PHMIdealCandidateProfile, PHMInterviewQuestionBank,
+    PHMSourcingChannel, PHMJobDescription, PHMPipelineStage, PHMCandidate,
+    PHMCandidateScreening, PHMTelephonicRound, PHMHiringErrorFlag
+)
