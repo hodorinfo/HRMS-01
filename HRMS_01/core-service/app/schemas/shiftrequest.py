@@ -28,4 +28,10 @@ class ShiftRequestRead(BaseModel):
     shift_id: int
     approved: bool = False
     canceled: bool = False
+    shift_changed: bool = False
+    previous_shift_id: Optional[int] = None
+    requested_date: Optional[date] = None
+    requested_till: Optional[date] = None
+    description: Optional[str] = None
+    is_permanent_shift: bool = False
     is_active: bool = True

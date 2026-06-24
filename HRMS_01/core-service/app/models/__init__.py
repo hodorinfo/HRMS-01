@@ -12,7 +12,6 @@ company_department = Table("base_department_company_id", Base.metadata,
 class Company(Base, HorillaBaseMixin):
     __tablename__ = "base_company"
     company: Mapped[str] = mapped_column(String(50))
-    hq: Mapped[bool] = mapped_column(Boolean, default=False)
     address: Mapped[str] = mapped_column(Text)
     country: Mapped[str] = mapped_column(String(50))
     state: Mapped[str] = mapped_column(String(50))
@@ -142,13 +141,11 @@ class Holidays(Base, HorillaBaseMixin):
     start_date: Mapped[date] = mapped_column(Date)
     end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     recurring: Mapped[bool] = mapped_column(Boolean, default=False)
-    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 class CompanyLeaves(Base, HorillaBaseMixin):
     __tablename__ = "base_companyleaves"
     based_on_week: Mapped[str] = mapped_column(String(1))
     based_on_week_day: Mapped[str] = mapped_column(String(1))
-    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 class MultipleApprovalCondition(Base, HorillaBaseMixin):
     __tablename__ = "base_multipleapprovalcondition"
@@ -158,7 +155,6 @@ class MultipleApprovalCondition(Base, HorillaBaseMixin):
     condition_value: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     condition_start_value: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     condition_end_value: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 class MultipleApprovalManagers(Base):
     __tablename__ = "base_multipleapprovalmanagers"
@@ -174,10 +170,20 @@ class Announcement(Base, HorillaBaseMixin):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     disable_comments: Mapped[bool] = mapped_column(Boolean, default=False)
     public_comments: Mapped[bool] = mapped_column(Boolean, default=True)
-    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+class AnnouncementComment(Base, HorillaBaseMixin):
+    __tablename__ = "base_announcementcomment"
+    announcement_id: Mapped[int] = mapped_column(Integer, ForeignKey("base_announcement.id", ondelete="CASCADE"))
+    employee_id: Mapped[int] = mapped_column(Integer)
+    comment: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+class AnnouncementView(Base, HorillaBaseMixin):
+    __tablename__ = "base_announcementview"
+    announcement_id: Mapped[int] = mapped_column(Integer, ForeignKey("base_announcement.id", ondelete="CASCADE"))
+    employee_id: Mapped[int] = mapped_column(Integer)
+    viewed: Mapped[bool] = mapped_column(Boolean, default=False)
 
 class HorillaMailTemplate(Base, HorillaBaseMixin):
     __tablename__ = "base_horillamailtemplate"
     title: Mapped[str] = mapped_column(String(100), unique=True)
     body: Mapped[str] = mapped_column(Text)
-    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)

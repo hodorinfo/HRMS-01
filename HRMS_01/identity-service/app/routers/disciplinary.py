@@ -10,5 +10,5 @@ from app.schemas import (
 )
 
 router = APIRouter()
-router.include_router(create_crud_router("/action-types", Actiontype, ActiontypeCreate, ActiontypeUpdate, ActiontypeRead, get_db, get_current_user, "employee"))
-router.include_router(create_crud_router("/disciplinary-actions", DisciplinaryAction, DisciplinaryActionCreate, DisciplinaryActionUpdate, DisciplinaryActionRead, get_db, get_current_user, "employee"))
+router.include_router(create_crud_router("/action-types", Actiontype, ActiontypeCreate, ActiontypeUpdate, ActiontypeRead, get_db, get_current_user, "employees"))
+router.include_router(create_crud_router("/disciplinary-actions", DisciplinaryAction, DisciplinaryActionCreate, DisciplinaryActionUpdate, DisciplinaryActionRead, get_db, get_current_user, "employees"))

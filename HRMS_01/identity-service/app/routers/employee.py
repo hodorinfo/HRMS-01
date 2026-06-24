@@ -181,7 +181,7 @@ async def toggle_employee_status(employee_id: int, db: DbSession, user: CurrentU
     await db.flush()
     return {"message": f"Employee {'activated' if employee.is_active else 'deactivated'} successfully"}
 
-work_info_router = create_crud_router("/work-info", EmployeeWorkInformation, EmployeeWorkInformationCreate, EmployeeWorkInformationUpdate, EmployeeWorkInformationRead, get_db, get_current_user, "employee")
-bank_router = create_crud_router("/bank-details", EmployeeBankDetails, EmployeeBankDetailsCreate, EmployeeBankDetailsUpdate, EmployeeBankDetailsRead, get_db, get_current_user, "employee")
+work_info_router = create_crud_router("/work-info", EmployeeWorkInformation, EmployeeWorkInformationCreate, EmployeeWorkInformationUpdate, EmployeeWorkInformationRead, get_db, get_current_user, "employees")
+bank_router = create_crud_router("/bank-details", EmployeeBankDetails, EmployeeBankDetailsCreate, EmployeeBankDetailsUpdate, EmployeeBankDetailsRead, get_db, get_current_user, "employees")
 router.include_router(work_info_router)
 router.include_router(bank_router)

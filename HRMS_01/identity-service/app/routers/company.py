@@ -11,6 +11,6 @@ from app.schemas import (
 )
 
 router = APIRouter()
-router.include_router(create_crud_router("/policies", Policy, PolicyCreate, PolicyUpdate, PolicyRead, get_db, get_current_user, "employee"))
-router.include_router(create_crud_router("/general-settings", EmployeeGeneralSetting, EmployeeGeneralSettingCreate, EmployeeGeneralSettingUpdate, EmployeeGeneralSettingRead, get_db, get_current_user, "employee"))
-router.include_router(create_crud_router("/profile-edit-features", ProfileEditFeature, ProfileEditFeatureCreate, ProfileEditFeatureUpdate, ProfileEditFeatureRead, get_db, get_current_user, "employee"))
+router.include_router(create_crud_router("/policies", Policy, PolicyCreate, PolicyUpdate, PolicyRead, get_db, get_current_user, "employees"))
+router.include_router(create_crud_router("/general-settings", EmployeeGeneralSetting, EmployeeGeneralSettingCreate, EmployeeGeneralSettingUpdate, EmployeeGeneralSettingRead, get_db, get_current_user, "employees"))
+router.include_router(create_crud_router("/profile-edit-features", ProfileEditFeature, ProfileEditFeatureCreate, ProfileEditFeatureUpdate, ProfileEditFeatureRead, get_db, get_current_user, "employees"))

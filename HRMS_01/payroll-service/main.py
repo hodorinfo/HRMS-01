@@ -21,8 +21,9 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.service_name,
         version="1.0.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        openapi_url="/api/openapi.json",
         lifespan=lifespan,
     )
     app.add_middleware(
@@ -36,7 +37,7 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     async def health():
-        return {{"status": "healthy", "service": settings.service_name}}
+        return {"status": "healthy", "service": settings.service_name}
 
     from horilla_common.exceptions import add_global_exception_handlers
     add_global_exception_handlers(app)

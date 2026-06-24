@@ -8,7 +8,6 @@ class MultipleApprovalConditionCreate(BaseModel):
     condition_value: Optional[str] = None
     condition_start_value: Optional[str] = None
     condition_end_value: Optional[str] = None
-    company_id: Optional[int] = None
 
 class MultipleApprovalConditionUpdate(BaseModel):
     condition_field: Optional[str] = None
@@ -16,7 +15,6 @@ class MultipleApprovalConditionUpdate(BaseModel):
     condition_value: Optional[str] = None
     condition_start_value: Optional[str] = None
     condition_end_value: Optional[str] = None
-    company_id: Optional[int] = None
     is_active: Optional[bool] = None
 
 class MultipleApprovalConditionRead(BaseModel):
@@ -26,5 +24,4 @@ class MultipleApprovalConditionRead(BaseModel):
     condition_field: str
     condition_operator: str
     condition_value: Optional[str] = None
-    company_id: Optional[int] = None
     is_active: bool = True

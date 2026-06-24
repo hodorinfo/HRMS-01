@@ -3,7 +3,6 @@ from pydantic import BaseModel, ConfigDict
 
 class CompanyCreate(BaseModel):
     company: str
-    hq: bool = False
     address: str
     country: str
     state: str
@@ -15,7 +14,6 @@ class CompanyCreate(BaseModel):
 
 class CompanyUpdate(BaseModel):
     company: Optional[str] = None
-    hq: Optional[bool] = None
     address: Optional[str] = None
     country: Optional[str] = None
     state: Optional[str] = None
@@ -30,7 +28,6 @@ class CompanyRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     company: str
-    hq: bool = False
     address: str
     country: str
     state: str

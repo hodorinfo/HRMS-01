@@ -13,6 +13,8 @@ from app.routers import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.signals import register_signals
+    register_signals()
     await init_db()
     yield
 
@@ -35,10 +37,6 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(api_router, prefix="/api/v1")
-
-    @app.get("/health")
-    async def health():
-        return {{"status": "healthy", "service": settings.service_name}}
 
     from horilla_common.exceptions import add_global_exception_handlers
     add_global_exception_handlers(app)
