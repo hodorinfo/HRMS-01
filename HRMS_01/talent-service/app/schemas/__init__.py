@@ -224,8 +224,14 @@ from .phm_recruitment import (
     PHMSourcingChannelCreate, PHMSourcingChannelUpdate, PHMSourcingChannelRead,
     PHMJobDescriptionCreate, PHMJobDescriptionUpdate, PHMJobDescriptionRead,
     PHMPipelineStageCreate, PHMPipelineStageUpdate, PHMPipelineStageRead,
+    PHMRejectionReasonCreate, PHMRejectionReasonUpdate, PHMRejectionReasonRead,
     PHMCandidateCreate, PHMCandidateUpdate, PHMCandidateRead,
     PHMCandidateScreeningCreate, PHMCandidateScreeningUpdate, PHMCandidateScreeningRead,
-    PHMTelephonicRoundCreate, PHMTelephonicRoundUpdate, PHMTelephonicRoundRead,
-    PHMHiringErrorFlagCreate, PHMHiringErrorFlagUpdate, PHMHiringErrorFlagRead
+    PHMInterviewFeedbackCreate, PHMInterviewFeedbackUpdate, PHMInterviewFeedbackRead,
+    PHMHiringErrorFlagCreate, PHMHiringErrorFlagUpdate, PHMHiringErrorFlagRead,
+    PHMHiringMasterTemplateCreate, PHMHiringMasterTemplateUpdate, PHMHiringMasterTemplateRead,
+    PHMMasterProcessStepCreate, PHMMasterProcessStepUpdate, PHMMasterProcessStepRead,
+    PHMStepDependencyCreate, PHMStepDependencyUpdate, PHMStepDependencyRead,
+    PHMRequestStepTrackerCreate, PHMRequestStepTrackerUpdate, PHMRequestStepTrackerRead,
+    PHMOfferDetailsCreate, PHMOfferDetailsUpdate, PHMOfferDetailsRead
 )

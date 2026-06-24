@@ -1,8 +1,10 @@
+from datetime import date, datetime
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, ConfigDict
 from app.models.phm_recruitment import (
     TriggerEnum, StrategyEnum, PriorityEnum, HiringRequestStatus, PositionTypeEnum,
-    SkillTypeEnum, ChannelTypeEnum, CVTypeEnum, ErrorTypeEnum
+    SkillTypeEnum, ChannelTypeEnum, CVTypeEnum, RoundNameEnum, ErrorTypeEnum,
+    ResponsibleRoleEnum, TrackerStatusEnum, OfferStatusEnum
 )
 
 # PHASE 1
@@ -14,6 +16,8 @@ class PHMHiringRequestBase(BaseModel):
     roi_expensive_hire_cost: float = 0.0
     roi_cheap_hire_cost: float = 0.0
     roi_expected_return: float = 0.0
+    target_hire_date: Optional[date] = None
+    actual_filled_date: Optional[date] = None
     status: HiringRequestStatus = HiringRequestStatus.PENDING
 
 class PHMHiringRequestCreate(PHMHiringRequestBase):
@@ -141,12 +145,27 @@ class PHMPipelineStageRead(PHMPipelineStageBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
 
+class PHMRejectionReasonBase(BaseModel):
+    reason_name: str
+
+class PHMRejectionReasonCreate(PHMRejectionReasonBase):
+    pass
+
+class PHMRejectionReasonUpdate(PHMRejectionReasonBase):
+    reason_name: Optional[str] = None
+
+class PHMRejectionReasonRead(PHMRejectionReasonBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+
 class PHMCandidateBase(BaseModel):
     name: str
     email: str
+    resume_url: Optional[str] = None
     hiring_request_id: int
     stage_id: Optional[int] = None
     source_channel_id: Optional[int] = None
+    rejection_reason_id: Optional[int] = None
     status: str = "active"
 
 class PHMCandidateCreate(PHMCandidateBase):
@@ -178,20 +197,21 @@ class PHMCandidateScreeningRead(PHMCandidateScreeningBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
 
-class PHMTelephonicRoundBase(BaseModel):
+class PHMInterviewFeedbackBase(BaseModel):
     candidate_id: int
-    start_hobbies_city: Optional[str] = None
-    middle_skills_rating: Optional[float] = None
-    end_priorities: Optional[str] = None
-    sell_job_pitch: Optional[str] = None
+    round_name: RoundNameEnum
+    panel_member: Optional[str] = None
+    rating: Optional[float] = None
+    feedback_text: Optional[str] = None
+    is_cleared: bool = False
 
-class PHMTelephonicRoundCreate(PHMTelephonicRoundBase):
+class PHMInterviewFeedbackCreate(PHMInterviewFeedbackBase):
     pass
 
-class PHMTelephonicRoundUpdate(PHMTelephonicRoundBase):
+class PHMInterviewFeedbackUpdate(PHMInterviewFeedbackBase):
     candidate_id: Optional[int] = None
 
-class PHMTelephonicRoundRead(PHMTelephonicRoundBase):
+class PHMInterviewFeedbackRead(PHMInterviewFeedbackBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
 
@@ -208,5 +228,99 @@ class PHMHiringErrorFlagUpdate(PHMHiringErrorFlagBase):
     error_type: Optional[ErrorTypeEnum] = None
 
 class PHMHiringErrorFlagRead(PHMHiringErrorFlagBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+
+# PROCESS ORCHESTRATION
+class PHMHiringMasterTemplateBase(BaseModel):
+    name: str
+    version: str
+
+class PHMHiringMasterTemplateCreate(PHMHiringMasterTemplateBase):
+    pass
+
+class PHMHiringMasterTemplateUpdate(PHMHiringMasterTemplateBase):
+    name: Optional[str] = None
+    version: Optional[str] = None
+
+class PHMHiringMasterTemplateRead(PHMHiringMasterTemplateBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+
+class PHMMasterProcessStepBase(BaseModel):
+    template_id: int
+    step_number: int
+    pipeline_stage_id: Optional[int] = None
+    step_title: str
+    step_description: Optional[str] = None
+    estimated_hours: Optional[int] = None
+    responsible_role: ResponsibleRoleEnum
+    order_index: int
+
+class PHMMasterProcessStepCreate(PHMMasterProcessStepBase):
+    pass
+
+class PHMMasterProcessStepUpdate(PHMMasterProcessStepBase):
+    template_id: Optional[int] = None
+    step_number: Optional[int] = None
+
+class PHMMasterProcessStepRead(PHMMasterProcessStepBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+
+class PHMStepDependencyBase(BaseModel):
+    step_id: int
+    depends_on_step_id: int
+
+class PHMStepDependencyCreate(PHMStepDependencyBase):
+    pass
+
+class PHMStepDependencyUpdate(PHMStepDependencyBase):
+    step_id: Optional[int] = None
+    depends_on_step_id: Optional[int] = None
+
+class PHMStepDependencyRead(PHMStepDependencyBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+
+class PHMRequestStepTrackerBase(BaseModel):
+    hiring_request_id: int
+    step_id: int
+    assigned_to_user_id: Optional[int] = None
+    status: TrackerStatusEnum = TrackerStatusEnum.NOT_STARTED
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    blocker_notes: Optional[str] = None
+
+class PHMRequestStepTrackerCreate(PHMRequestStepTrackerBase):
+    pass
+
+class PHMRequestStepTrackerUpdate(PHMRequestStepTrackerBase):
+    hiring_request_id: Optional[int] = None
+    step_id: Optional[int] = None
+
+class PHMRequestStepTrackerRead(PHMRequestStepTrackerBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+
+# OFFER MANAGEMENT
+class PHMOfferDetailsBase(BaseModel):
+    candidate_id: int
+    hiring_request_id: int
+    offered_ctc: float
+    offer_letter_sent_at: Optional[datetime] = None
+    offer_accepted_at: Optional[datetime] = None
+    joining_date: Optional[date] = None
+    status: OfferStatusEnum = OfferStatusEnum.DRAFT
+
+class PHMOfferDetailsCreate(PHMOfferDetailsBase):
+    pass
+
+class PHMOfferDetailsUpdate(PHMOfferDetailsBase):
+    candidate_id: Optional[int] = None
+    hiring_request_id: Optional[int] = None
+    offered_ctc: Optional[float] = None
+
+class PHMOfferDetailsRead(PHMOfferDetailsBase):
     model_config = ConfigDict(from_attributes=True)
     id: int

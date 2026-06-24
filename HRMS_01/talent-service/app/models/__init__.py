@@ -139,6 +139,7 @@ class EmployeeTask(Base, HorillaBaseMixin):
 
 from .phm_recruitment import (
     PHMHiringRequest, PHMPositionPrep, PHMIdealCandidateProfile, PHMInterviewQuestionBank,
-    PHMSourcingChannel, PHMJobDescription, PHMPipelineStage, PHMCandidate,
-    PHMCandidateScreening, PHMTelephonicRound, PHMHiringErrorFlag
+    PHMSourcingChannel, PHMJobDescription, PHMPipelineStage, PHMRejectionReason, PHMCandidate,
+    PHMCandidateScreening, PHMInterviewFeedback, PHMHiringErrorFlag,
+    PHMHiringMasterTemplate, PHMMasterProcessStep, PHMStepDependency, PHMRequestStepTracker, PHMOfferDetails
 )

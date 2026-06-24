@@ -76,7 +76,19 @@ def create_crud_router(
             await db.refresh(item)
         except IntegrityError as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail="This item already exists or violates a unique constraint.")
+            error_msg = str(e.orig) if e.orig else str(e)
+            user_friendly_msg = error_msg
+            if "DETAIL:" in error_msg:
+                detail_part = error_msg.split("DETAIL:")[1].strip()
+                if "foreign key constraint" in error_msg.lower():
+                    user_friendly_msg = f"Missing Reference Error: {detail_part}"
+                elif "unique constraint" in error_msg.lower() or "duplicate key" in error_msg.lower():
+                    user_friendly_msg = f"Duplicate Error: {detail_part}"
+                else:
+                    user_friendly_msg = f"Database Error: {detail_part}"
+            else:
+                user_friendly_msg = f"Database Integrity Error: {error_msg.split(chr(10))[0]}"
+            raise HTTPException(status_code=400, detail=user_friendly_msg)
         return read_schema.model_validate(item)
 
     @router.put("/{item_id}", response_model=read_schema)
@@ -99,7 +111,19 @@ def create_crud_router(
             await db.refresh(item)
         except IntegrityError as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail="This update violates a unique constraint.")
+            error_msg = str(e.orig) if e.orig else str(e)
+            user_friendly_msg = error_msg
+            if "DETAIL:" in error_msg:
+                detail_part = error_msg.split("DETAIL:")[1].strip()
+                if "foreign key constraint" in error_msg.lower():
+                    user_friendly_msg = f"Missing Reference Error: {detail_part}"
+                elif "unique constraint" in error_msg.lower() or "duplicate key" in error_msg.lower():
+                    user_friendly_msg = f"Duplicate Error: {detail_part}"
+                else:
+                    user_friendly_msg = f"Database Error: {detail_part}"
+            else:
+                user_friendly_msg = f"Database Integrity Error: {error_msg.split(chr(10))[0]}"
+            raise HTTPException(status_code=400, detail=user_friendly_msg)
         return read_schema.model_validate(item)
 
     @router.delete("/{item_id}", status_code=204)
