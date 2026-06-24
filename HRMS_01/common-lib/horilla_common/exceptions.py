@@ -1,7 +1,7 @@
 import traceback
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DBAPIError
 
 def add_global_exception_handlers(app: FastAPI):
     @app.exception_handler(IntegrityError)
@@ -41,14 +41,24 @@ def add_global_exception_handlers(app: FastAPI):
             content={"detail": f"Database integrity violation: {err_msg}"}
         )
 
+    @app.exception_handler(DBAPIError)
+    async def dbapi_exception_handler(request: Request, exc: DBAPIError):
+        # Handle DataErrors, ProgrammingErrors etc (like value too long)
+        err_msg = str(exc.orig) if exc.orig else str(exc)
+        clean_msg = err_msg.split('\n')[0] # Get only the first line of the DB error
+        return JSONResponse(
+            status_code=400,
+            content={"detail": clean_msg}
+        )
+
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
-        tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        # Send a clean error to the frontend, log traceback internally if needed
+        clean_msg = str(exc).split('\n')[0]
         return JSONResponse(
             status_code=500,
             content={
-                "detail": str(exc),
-                "error_type": exc.__class__.__name__,
-                "traceback": tb
+                "detail": clean_msg,
+                "error_type": exc.__class__.__name__
             }
         )

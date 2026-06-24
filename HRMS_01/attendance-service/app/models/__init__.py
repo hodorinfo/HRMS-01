@@ -90,8 +90,8 @@ class AttendanceGeneralSetting(Base, HorillaBaseMixin):
 class WorkRecords(Base):
     __tablename__ = "attendance_workrecords"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    record_name: Mapped[str] = mapped_column(String(50))
-    work_record_type: Mapped[str] = mapped_column(String(5))
+    record_name: Mapped[str] = mapped_column(String(100))
+    work_record_type: Mapped[str] = mapped_column(String(20))
     employee_id: Mapped[int] = mapped_column(Integer)
     date: Mapped[date] = mapped_column(Date)
     at_work: Mapped[str] = mapped_column(String(10))
