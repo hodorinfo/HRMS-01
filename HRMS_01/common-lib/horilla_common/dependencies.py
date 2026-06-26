@@ -11,7 +11,7 @@ from horilla_common.permissions import check_permission, require_write_permissio
 
 
 def create_auth_dependency(secret_key: str, algorithm: str = "HS256"):
-    oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://192.168.1.41/api/v1/auth/login")
+    oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://192.168.1.29/api/v1/auth/login")
 
     async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> TokenPayload:
         try:
