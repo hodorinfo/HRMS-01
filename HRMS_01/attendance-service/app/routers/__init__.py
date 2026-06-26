@@ -69,3 +69,7 @@ for prefix, model, create, update, read, module_name in [
 # Register Legacy Actions (Custom Endpoints)
 from app.routers import legacy_actions
 api_router.include_router(legacy_actions.router)
+
+# Register Status Endpoints
+from app.routers import attendance_status
+api_router.include_router(attendance_status.router, prefix="/attendance-status")

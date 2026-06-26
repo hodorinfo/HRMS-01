@@ -19,6 +19,7 @@ class UserCreate(BaseModel):
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
+    employee_id: Optional[int] = None
     username: str
     email: str
     first_name: Optional[str] = None
@@ -180,7 +181,6 @@ class EmployeeWorkInformationRead(HorillaSchema):
     salary_hour: Optional[int] = None
     additional_info: Optional[dict] = None
     experience: Optional[float] = None
-    tags: Optional[list[EmployeeTagRead]] = None
 
 class EmployeeBankDetailsCreate(BaseModel):
     employee_id: int
@@ -220,7 +220,10 @@ class EmployeeBankDetailsRead(HorillaSchema):
     any_other_code1: Optional[str] = None
     any_other_code2: Optional[str] = None
     additional_info: Optional[dict] = None
-    is_active: bool = True
+
+class EmployeeProfileRead(EmployeeRead):
+    work_info: Optional[EmployeeWorkInformationRead] = None
+    bank_details: Optional[EmployeeBankDetailsRead] = None
 
 class LDAPSettingsCreate(BaseModel):
     ldap_server: str = "ldap://127.0.0.1:389"

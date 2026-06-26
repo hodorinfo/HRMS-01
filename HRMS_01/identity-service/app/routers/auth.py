@@ -79,7 +79,16 @@ async def me(db: DbSession, current_user: CurrentUser):
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return UserRead.model_validate(user)
+        
+    # Fetch corresponding employee_id
+    emp_result = await db.execute(select(Employee).where(Employee.employee_user_id == user.id))
+    employee = emp_result.scalar_one_or_none()
+    
+    # We can use model_validate and manually set employee_id since it's an attribute
+    user_data = UserRead.model_validate(user)
+    user_data.employee_id = employee.id if employee else None
+    
+    return user_data
 
 @router.post("/register", response_model=UserRead, status_code=201)
 async def register(data: UserCreate, db: DbSession):

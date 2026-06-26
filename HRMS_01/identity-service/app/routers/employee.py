@@ -13,7 +13,7 @@ from sqlalchemy.orm import selectinload
 from app.models import Employee, EmployeeBankDetails, EmployeeWorkInformation, User, EmployeeTag, DisciplinaryAction, BonusPoint
 from app.schemas import (
     EmployeeBankDetailsCreate, EmployeeBankDetailsRead, EmployeeBankDetailsUpdate,
-    EmployeeCreate, EmployeeRead, EmployeeUpdate,
+    EmployeeCreate, EmployeeRead, EmployeeUpdate, EmployeeProfileRead,
     EmployeeWorkInformationCreate, EmployeeWorkInformationRead, EmployeeWorkInformationUpdate,
     SetEmployeePasswordRequest, DisciplinaryActionRead, BonusPointRead
 )
@@ -41,31 +41,87 @@ async def list_employees(
     pages = (total + page_size - 1) // page_size if total else 0
     return PaginatedResponse(items=[EmployeeRead.model_validate(i) for i in items], total=total or 0, page=page, page_size=page_size, pages=pages)
 
-@router.get("/{employee_id}", response_model=EmployeeRead)
+@router.get("/me", response_model=EmployeeProfileRead)
+async def get_my_employee_profile(db: DbSession, user: CurrentUser):
+    # Determine the employee ID. 
+    # If the user is an employee, user.employee should exist, but let's query the DB directly to be sure.
+    # The JWT token already contains `employee_id` in some token generations, but we can query by employee_user_id
+    result = await db.execute(
+        select(Employee)
+        .options(selectinload(Employee.work_info), selectinload(Employee.bank_details))
+        .where(Employee.employee_user_id == user.user_id)
+    )
+    emp = result.scalar_one_or_none()
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employee profile not found for the current user.")
+    return EmployeeProfileRead.model_validate(emp)
+
+@router.get("/{employee_id}", response_model=EmployeeProfileRead)
 async def get_employee(employee_id: int, db: DbSession, _user: CurrentUser):
-    result = await db.execute(select(Employee).where(Employee.id == employee_id))
+    result = await db.execute(
+        select(Employee)
+        .options(selectinload(Employee.work_info), selectinload(Employee.bank_details))
+        .where(Employee.id == employee_id)
+    )
     emp = result.scalar_one_or_none()
     if not emp:
         raise HTTPException(status_code=404, detail="Employee not found")
-    return EmployeeRead.model_validate(emp)
+    return EmployeeProfileRead.model_validate(emp)
+
+from fastapi import Request
 
 @router.post("", response_model=EmployeeRead, status_code=201)
-async def create_employee(data: EmployeeCreate, background_tasks: BackgroundTasks, db: DbSession, user: CurrentUser):
+async def create_employee(data: EmployeeCreate, background_tasks: BackgroundTasks, db: DbSession, request: Request):
+    user_count = await db.scalar(select(func.count()).select_from(User))
+    
+    # 1. Conditional Authentication Logic
+    if user_count > 0:
+        # DB has users, so authentication is strictly REQUIRED
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        
+        token = auth_header.split(" ")[1]
+        try:
+            settings = get_settings()
+            from horilla_common.jwt import decode_token
+            decode_token(token, settings.jwt_secret_key, settings.jwt_algorithm)
+        except Exception:
+            raise HTTPException(status_code=401, detail="Could not validate credentials")
+
+    # 2. Check for duplicate email
     existing = await db.execute(select(Employee).where(Employee.email == data.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already exists")
+        
     emp_data = data.model_dump(exclude={"password"})
     employee = Employee(**emp_data)
 
-    password_to_use = data.password if data.password else data.phone
+    # 3. Create User Profile
+    password_to_use = data.password if data.password else str(data.phone).strip()
     hashed_pw = bcrypt.hashpw(password_to_use.encode(), bcrypt.gensalt()).decode()
-    u = User(username=data.email, email=data.email, password_hash=hashed_pw, first_name=data.employee_first_name, last_name=data.employee_last_name)
+    
+    # Automatically grant superadmin rights if this is the very first user
+    is_first_user = (user_count == 0)
+    
+    u = User(
+        username=data.email, 
+        email=data.email, 
+        password_hash=hashed_pw, 
+        first_name=data.employee_first_name, 
+        last_name=data.employee_last_name,
+        is_staff=is_first_user,
+        is_superuser=is_first_user
+    )
     db.add(u)
     await db.flush()
+    
+    # 4. Create Employee Profile linked to User
     employee.employee_user_id = u.id
     db.add(employee)
     await db.flush()
     await db.refresh(employee)
+    
     publish_event(celery_app, EVENT_EMPLOYEE_CREATED, {"employee_id": employee.id, "email": employee.email, "company_id": None})
     return EmployeeRead.model_validate(employee)
 
