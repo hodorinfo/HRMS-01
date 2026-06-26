@@ -233,5 +233,6 @@ from .phm_recruitment import (
     PHMMasterProcessStepCreate, PHMMasterProcessStepUpdate, PHMMasterProcessStepRead,
     PHMStepDependencyCreate, PHMStepDependencyUpdate, PHMStepDependencyRead,
     PHMRequestStepTrackerCreate, PHMRequestStepTrackerUpdate, PHMRequestStepTrackerRead,
-    PHMOfferDetailsCreate, PHMOfferDetailsUpdate, PHMOfferDetailsRead
+    PHMOfferDetailsCreate, PHMOfferDetailsUpdate, PHMOfferDetailsRead,
+    PHMInterviewScheduleCreate, PHMInterviewScheduleUpdate, PHMInterviewScheduleRead
 )

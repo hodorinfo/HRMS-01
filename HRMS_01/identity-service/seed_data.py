@@ -30,7 +30,7 @@ async def seed_core():
             await db.execute(text(f"ALTER SEQUENCE IF EXISTS {tbl}_id_seq RESTART WITH 1"))
         
         # Company
-        await db.execute(text("INSERT INTO base_company (id, company, hq, address, country, state, city, zip, is_active) VALUES (1, 'Horilla Technologies', true, '123 Tech Park', 'India', 'Karnataka', 'Bangalore', '560100', true)"))
+        await db.execute(text("INSERT INTO base_company (id, company, address, country, state, city, zip, is_active) VALUES (1, 'Horilla Technologies', '123 Tech Park', 'India', 'Karnataka', 'Bangalore', '560100', true)"))
         # Departments
         await db.execute(text("INSERT INTO base_department (id, department, is_active) VALUES (1,'Engineering',true),(2,'Human Resources',true),(3,'Marketing',true),(4,'Finance',true)"))
         # Job Positions
@@ -195,7 +195,7 @@ async def seed_permission():
     print("Seeding permission_db...")
     engine, Session = await get_db_session(PERMISSION_DB_URL)
     async with Session() as db:
-        await db.execute(text("TRUNCATE permission_user_roles, permission_role CASCADE"))
+        await db.execute(text("TRUNCATE permission_userrole, permission_role CASCADE"))
         for tbl in ['permission_role']:
             await db.execute(text(f"ALTER SEQUENCE IF EXISTS {tbl}_id_seq RESTART WITH 1"))
         
@@ -209,7 +209,7 @@ async def seed_permission():
         
         # Map roles to seeded auth_user IDs (from identity_db)
         await db.execute(text("""
-            INSERT INTO permission_user_roles (user_id, role_id) VALUES 
+            INSERT INTO permission_userrole (user_id, role_id) VALUES 
                 (1, 1), 
                 (2, 2), 
                 (3, 3), 

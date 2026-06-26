@@ -8,7 +8,8 @@ from app.models import (
     PHMHiringRequest, PHMPositionPrep, PHMIdealCandidateProfile, PHMInterviewQuestionBank,
     PHMSourcingChannel, PHMJobDescription, PHMPipelineStage, PHMRejectionReason, PHMCandidate,
     PHMCandidateScreening, PHMInterviewFeedback, PHMHiringErrorFlag,
-    PHMHiringMasterTemplate, PHMMasterProcessStep, PHMStepDependency, PHMRequestStepTracker, PHMOfferDetails
+    PHMHiringMasterTemplate, PHMMasterProcessStep, PHMStepDependency, PHMRequestStepTracker, PHMOfferDetails,
+    PHMInterviewSchedule
 )
 
 # Schemas
@@ -29,7 +30,8 @@ from app.schemas import (
     PHMMasterProcessStepCreate, PHMMasterProcessStepUpdate, PHMMasterProcessStepRead,
     PHMStepDependencyCreate, PHMStepDependencyUpdate, PHMStepDependencyRead,
     PHMRequestStepTrackerCreate, PHMRequestStepTrackerUpdate, PHMRequestStepTrackerRead,
-    PHMOfferDetailsCreate, PHMOfferDetailsUpdate, PHMOfferDetailsRead
+    PHMOfferDetailsCreate, PHMOfferDetailsUpdate, PHMOfferDetailsRead,
+    PHMInterviewScheduleCreate, PHMInterviewScheduleUpdate, PHMInterviewScheduleRead
 )
 
 router = APIRouter()
@@ -48,6 +50,7 @@ routers = [
     ("/candidates", PHMCandidate, PHMCandidateCreate, PHMCandidateUpdate, PHMCandidateRead, "PHM: Candidates & Pipeline"),
     ("/candidate-screenings", PHMCandidateScreening, PHMCandidateScreeningCreate, PHMCandidateScreeningUpdate, PHMCandidateScreeningRead, "PHM: Candidates & Pipeline"),
     ("/interview-feedbacks", PHMInterviewFeedback, PHMInterviewFeedbackCreate, PHMInterviewFeedbackUpdate, PHMInterviewFeedbackRead, "PHM: Candidates & Pipeline"),
+    ("/interview-schedules", PHMInterviewSchedule, PHMInterviewScheduleCreate, PHMInterviewScheduleUpdate, PHMInterviewScheduleRead, "PHM: Candidates & Pipeline"),
     ("/hiring-error-flags", PHMHiringErrorFlag, PHMHiringErrorFlagCreate, PHMHiringErrorFlagUpdate, PHMHiringErrorFlagRead, "PHM: Candidates & Pipeline"),
     ("/offer-details", PHMOfferDetails, PHMOfferDetailsCreate, PHMOfferDetailsUpdate, PHMOfferDetailsRead, "PHM: Candidates & Pipeline"),
     

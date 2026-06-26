@@ -64,7 +64,7 @@ class Feedback(Base, HorillaBaseMixin):
 # Onboarding
 class OnboardingStage(Base, HorillaBaseMixin):
     __tablename__ = "onboarding_onboardingstage"
-    recruitment_id: Mapped[int] = mapped_column(Integer, ForeignKey("recruitment_recruitment.id"))
+    recruitment_id: Mapped[int] = mapped_column(Integer, ForeignKey("phm_hiring_request.id"))
     sequence: Mapped[int] = mapped_column(Integer, default=0)
     is_final_stage: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -141,5 +141,6 @@ from .phm_recruitment import (
     PHMHiringRequest, PHMPositionPrep, PHMIdealCandidateProfile, PHMInterviewQuestionBank,
     PHMSourcingChannel, PHMJobDescription, PHMPipelineStage, PHMRejectionReason, PHMCandidate,
     PHMCandidateScreening, PHMInterviewFeedback, PHMHiringErrorFlag,
-    PHMHiringMasterTemplate, PHMMasterProcessStep, PHMStepDependency, PHMRequestStepTracker, PHMOfferDetails
+    PHMHiringMasterTemplate, PHMMasterProcessStep, PHMStepDependency, PHMRequestStepTracker, PHMOfferDetails,
+    PHMInterviewSchedule
 )

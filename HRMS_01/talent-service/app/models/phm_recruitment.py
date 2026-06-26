@@ -226,3 +226,14 @@ class PHMOfferDetails(Base, HorillaBaseMixin):
     offer_accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     joining_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     status: Mapped[OfferStatusEnum] = mapped_column(String(50), default=OfferStatusEnum.DRAFT)
+
+# INTERVIEW SCHEDULING
+class PHMInterviewSchedule(Base, HorillaBaseMixin):
+    __tablename__ = "phm_interview_schedule"
+    candidate_id: Mapped[int] = mapped_column(Integer, ForeignKey("phm_candidate.id", ondelete="CASCADE"))
+    round_name: Mapped[RoundNameEnum] = mapped_column(String(50))
+    interviewer_id: Mapped[int] = mapped_column(Integer)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    duration_minutes: Mapped[int] = mapped_column(Integer, default=60)
+    meeting_link: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="scheduled")

@@ -324,3 +324,26 @@ class PHMOfferDetailsUpdate(PHMOfferDetailsBase):
 class PHMOfferDetailsRead(PHMOfferDetailsBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
+
+# INTERVIEW SCHEDULING
+class PHMInterviewScheduleBase(BaseModel):
+    candidate_id: int
+    round_name: RoundNameEnum
+    interviewer_id: int
+    scheduled_at: datetime
+    duration_minutes: int = 60
+    meeting_link: Optional[str] = None
+    status: str = "scheduled"
+
+class PHMInterviewScheduleCreate(PHMInterviewScheduleBase):
+    pass
+
+class PHMInterviewScheduleUpdate(PHMInterviewScheduleBase):
+    candidate_id: Optional[int] = None
+    round_name: Optional[RoundNameEnum] = None
+    interviewer_id: Optional[int] = None
+    scheduled_at: Optional[datetime] = None
+
+class PHMInterviewScheduleRead(PHMInterviewScheduleBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
