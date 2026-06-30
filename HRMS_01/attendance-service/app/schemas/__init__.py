@@ -327,3 +327,38 @@ class EmployeeFaceDetectionRead(HorillaSchema):
     id: int
     employee_id: int
     image: Optional[str] = None
+
+# --- NEW ADDED SCHEMAS FOR ATTENDANCE ---
+class AttendanceRequestFileCreate(BaseModel):
+    file: str
+
+class AttendanceRequestFileRead(HorillaSchema):
+    id: int
+    file: str
+    is_active: bool = True
+
+class AttendanceRequestCommentCreate(BaseModel):
+    request_id: int
+    employee_id: int
+    comment: str
+
+class AttendanceRequestCommentRead(HorillaSchema):
+    id: int
+    request_id: int
+    employee_id: int
+    comment: str
+    is_active: bool = True
+
+class AttendanceValidationConditionCreate(BaseModel):
+    validation_at_work: str = "00:00"
+    minimum_overtime_to_approve: str = "00:00"
+    overtime_cutoff: str = "00:00"
+    company_id: Optional[int] = None
+
+class AttendanceValidationConditionRead(HorillaSchema):
+    id: int
+    validation_at_work: str
+    minimum_overtime_to_approve: str
+    overtime_cutoff: str
+    is_active: bool = True
+

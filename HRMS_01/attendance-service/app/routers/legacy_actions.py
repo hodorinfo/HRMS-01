@@ -13,6 +13,88 @@ from app.models import (
 
 router = APIRouter(tags=["Legacy Actions"])
 
+class AttendanceRequestPayload(BaseModel):
+    employee_id: int
+    attendance_date: date
+    attendance_clock_in_date: Optional[date] = None
+    attendance_clock_in: Optional[str] = None
+    attendance_clock_out_date: Optional[date] = None
+    attendance_clock_out: Optional[str] = None
+    request_description: Optional[str] = None
+    shift_id: Optional[int] = None
+    work_type_id: Optional[int] = None
+    minimum_hour: str = "00:00"
+
+@router.get("/attendance-request")
+async def get_attendance_requests(db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    # Returns all attendances that are validate requests
+    stmt = select(Attendance).where(Attendance.is_validate_request == True)
+    results = await db.scalars(stmt)
+    return results.all()
+
+@router.get("/attendance-request/{id}")
+async def get_attendance_request(id: int, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    attendance = await db.get(Attendance, id)
+    if not attendance or not attendance.is_validate_request:
+        raise HTTPException(status_code=404, detail="Attendance request not found")
+    return attendance
+
+@router.post("/attendance-request", status_code=status.HTTP_201_CREATED)
+async def create_attendance_request(payload: AttendanceRequestPayload, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    # Check if attendance already exists
+    stmt = select(Attendance).where(
+        Attendance.employee_id == payload.employee_id,
+        Attendance.attendance_date == payload.attendance_date
+    )
+    result = await db.scalars(stmt)
+    existing_attendance = result.first()
+
+    if existing_attendance:
+        # Convert payload to dict for requested_data
+        import json
+        payload_dict = payload.dict()
+        for k, v in payload_dict.items():
+            if isinstance(v, date):
+                payload_dict[k] = v.isoformat()
+        
+        existing_attendance.requested_data = json.dumps(payload_dict)
+        existing_attendance.is_validate_request = True
+        existing_attendance.request_type = "update_request"
+        existing_attendance.request_description = payload.request_description
+        await db.commit()
+        return existing_attendance
+
+    # Create new attendance request
+    new_attendance = Attendance(
+        **payload.dict(exclude_none=True),
+        is_validate_request=True,
+        attendance_validated=False,
+        request_type="create_request"
+    )
+    db.add(new_attendance)
+    await db.commit()
+    await db.refresh(new_attendance)
+    return new_attendance
+
+@router.put("/attendance-request/{id}")
+async def update_attendance_request(id: int, payload: AttendanceRequestPayload, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    attendance = await db.get(Attendance, id)
+    if not attendance:
+        raise HTTPException(status_code=404, detail="Attendance not found")
+    
+    import json
+    payload_dict = payload.dict()
+    for k, v in payload_dict.items():
+        if isinstance(v, date):
+            payload_dict[k] = v.isoformat()
+            
+    attendance.requested_data = json.dumps(payload_dict)
+    attendance.is_validate_request = True
+    attendance.request_type = "update_request"
+    attendance.request_description = payload.request_description
+    await db.commit()
+    return attendance
+
 class ClockInOutPayload(BaseModel):
     employee_id: int
 

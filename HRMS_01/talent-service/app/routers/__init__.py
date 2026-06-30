@@ -5,13 +5,15 @@ from app.dependencies import get_current_user
 from app.models import (
     Objective, EmployeeObjective, Feedback, Offboarding, ResignationLetter, 
     OnboardingStage, OnboardingTask, CandidateStage, CandidateTask, OnboardingPortal,
-    Period, KeyResult, OffboardingStage, OffboardingEmployee, OffboardingTask, EmployeeTask
+    Period, KeyResult, OffboardingStage, OffboardingEmployee, OffboardingTask, EmployeeTask,
+    ExitReason, OffboardingNote, OffboardingGeneralSetting, OffboardingStageMultipleFile
 )
 from app.schemas import (
     ObjectiveCreate, ObjectiveRead,
     EmployeeObjectiveCreate, EmployeeObjectiveRead,
     FeedbackCreate, FeedbackRead,
     OffboardingCreate, OffboardingRead,
+    OffboardingStageFileCreate, OffboardingStageFileRead,
     ResignationLetterCreate, ResignationLetterRead,
     OnboardingStageCreate, OnboardingStageRead,
     OnboardingTaskCreate, OnboardingTaskRead,
@@ -24,6 +26,9 @@ from app.schemas import (
     OffboardingEmployeeCreate, OffboardingEmployeeRead,
     OffboardingTaskCreate, OffboardingTaskRead,
     EmployeeTaskCreate, EmployeeTaskRead,
+    ExitReasonCreate, ExitReasonRead,
+    OffboardingNoteCreate, OffboardingNoteRead,
+    OffboardingGeneralSettingCreate, OffboardingGeneralSettingRead,
 )
 from app.routers import health
 
@@ -40,7 +45,11 @@ for prefix, model, create, update, read, module_name in [
     ("/offboarding-employees", OffboardingEmployee, OffboardingEmployeeCreate, OffboardingEmployeeRead, OffboardingEmployeeRead, "Offboarding"),
     ("/offboarding-tasks", OffboardingTask, OffboardingTaskCreate, OffboardingTaskRead, OffboardingTaskRead, "Offboarding"),
     ("/employee-tasks", EmployeeTask, EmployeeTaskCreate, EmployeeTaskRead, EmployeeTaskRead, "Offboarding"),
-    ("/resignation-letters", ResignationLetter, ResignationLetterCreate, ResignationLetterRead, ResignationLetterRead, "Offboarding"), 
+    ("/resignation-letters", ResignationLetter, ResignationLetterCreate, ResignationLetterRead, ResignationLetterRead, "Offboarding"),
+    ("/exit-reasons", ExitReason, ExitReasonCreate, ExitReasonRead, ExitReasonRead, "Offboarding"),
+    ("/offboarding-notes", OffboardingNote, OffboardingNoteCreate, OffboardingNoteRead, OffboardingNoteRead, "Offboarding"),
+    ("/offboarding-settings", OffboardingGeneralSetting, OffboardingGeneralSettingCreate, OffboardingGeneralSettingRead, OffboardingGeneralSettingRead, "Offboarding"),
+    ("/offboarding-files", OffboardingStageMultipleFile, OffboardingStageFileCreate, OffboardingStageFileRead, OffboardingStageFileRead, "Offboarding"),
     ("/onboarding-stages", OnboardingStage, OnboardingStageCreate, OnboardingStageRead, OnboardingStageRead, "Onboarding"),
     ("/onboarding-tasks", OnboardingTask, OnboardingTaskCreate, OnboardingTaskRead, OnboardingTaskRead, "Onboarding"),
     ("/candidate-stages", CandidateStage, CandidateStageCreate, CandidateStageRead, CandidateStageRead, "Onboarding"),

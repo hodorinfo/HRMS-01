@@ -237,3 +237,32 @@ class EmployeeFaceDetection(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     employee_id: Mapped[int] = mapped_column(Integer, unique=True)
     image: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
+# --- NEW ADDED MODELS FOR ATTENDANCE ---
+from sqlalchemy import Table, Column
+
+attendance_comment_file_association = Table(
+    "attendance_attendancerequestcomment_files",
+    Base.metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("attendancerequestcomment_id", Integer, ForeignKey("attendance_attendancerequestcomment.id", ondelete="CASCADE")),
+    Column("attendancerequestfile_id", Integer, ForeignKey("attendance_attendancerequestfile.id", ondelete="CASCADE")),
+)
+
+class AttendanceRequestFile(Base, HorillaBaseMixin):
+    __tablename__ = "attendance_attendancerequestfile"
+    file: Mapped[str] = mapped_column(String(500))
+
+class AttendanceRequestComment(Base, HorillaBaseMixin):
+    __tablename__ = "attendance_attendancerequestcomment"
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("attendance_attendance.id", ondelete="CASCADE"))
+    employee_id: Mapped[int] = mapped_column(Integer)
+    comment: Mapped[str] = mapped_column(Text)
+
+class AttendanceValidationCondition(Base, HorillaBaseMixin):
+    __tablename__ = "attendance_attendancevalidationcondition"
+    validation_at_work: Mapped[str] = mapped_column(String(10), default="00:00")
+    minimum_overtime_to_approve: Mapped[str] = mapped_column(String(10), default="00:00")
+    overtime_cutoff: Mapped[str] = mapped_column(String(10), default="00:00")
+    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+

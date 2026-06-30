@@ -64,13 +64,18 @@ class Feedback(Base, HorillaBaseMixin):
 # Onboarding
 class OnboardingStage(Base, HorillaBaseMixin):
     __tablename__ = "onboarding_onboardingstage"
+    stage_title: Mapped[str] = mapped_column(String(100))
     recruitment_id: Mapped[int] = mapped_column(Integer, ForeignKey("phm_hiring_request.id"))
+    employee_id: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     sequence: Mapped[int] = mapped_column(Integer, default=0)
     is_final_stage: Mapped[bool] = mapped_column(Boolean, default=False)
 
 class OnboardingTask(Base, HorillaBaseMixin):
     __tablename__ = "onboarding_onboardingtask"
+    task_title: Mapped[str] = mapped_column(String(100))
     stage_id: Mapped[int] = mapped_column(Integer, ForeignKey("onboarding_onboardingstage.id"))
+    candidates: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    employee_id: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
 
 class CandidateStage(Base, HorillaBaseMixin):
     __tablename__ = "onboarding_candidatestage"
@@ -85,6 +90,7 @@ class CandidateTask(Base, HorillaBaseMixin):
     stage_id: Mapped[int] = mapped_column(Integer, ForeignKey("onboarding_onboardingstage.id"))
     onboarding_task_id: Mapped[int] = mapped_column(Integer, ForeignKey("onboarding_onboardingtask.id"))
     status: Mapped[str] = mapped_column(String(20), default="todo")
+    history: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
 class OnboardingPortal(Base, HorillaBaseMixin):
     __tablename__ = "onboarding_onboardingportal"
@@ -92,50 +98,82 @@ class OnboardingPortal(Base, HorillaBaseMixin):
     token: Mapped[str] = mapped_column(String(100))
     used: Mapped[bool] = mapped_column(Boolean, default=False)
     count: Mapped[int] = mapped_column(Integer, default=0)
+    profile: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 # Offboarding
+class OffboardingStageMultipleFile(Base, HorillaBaseMixin):
+    __tablename__ = "offboarding_offboardingstagefile"
+    attachment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
 class Offboarding(Base, HorillaBaseMixin):
     __tablename__ = "offboarding_offboarding"
-    title: Mapped[str] = mapped_column(String(100))
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    title: Mapped[str] = mapped_column(String(20))
+    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    managers: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)  # M2M -> employee_ids
     status: Mapped[str] = mapped_column(String(20), default="ongoing")
     company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 class OffboardingStage(Base, HorillaBaseMixin):
     __tablename__ = "offboarding_offboardingstage"
-    title: Mapped[str] = mapped_column(String(100))
-    type: Mapped[str] = mapped_column(String(20))
+    title: Mapped[str] = mapped_column(String(20))
+    type: Mapped[str] = mapped_column(String(20), default="other")
     offboarding_id: Mapped[int] = mapped_column(Integer, ForeignKey("offboarding_offboarding.id"))
+    managers: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)  # M2M -> employee_ids
     sequence: Mapped[int] = mapped_column(Integer, default=0)
 
 class OffboardingEmployee(Base, HorillaBaseMixin):
     __tablename__ = "offboarding_offboardingemployee"
     employee_id: Mapped[int] = mapped_column(Integer, unique=True)
-    stage_id: Mapped[int] = mapped_column(Integer, ForeignKey("offboarding_offboardingstage.id"))
-    notice_period: Mapped[int] = mapped_column(Integer, default=0)
-    unit: Mapped[str] = mapped_column(String(10), default="day")
+    stage_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("offboarding_offboardingstage.id"), nullable=True)
+    notice_period: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    unit: Mapped[Optional[str]] = mapped_column(String(10), default="month", nullable=True)
     notice_period_starts: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     notice_period_ends: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
 class ResignationLetter(Base, HorillaBaseMixin):
     __tablename__ = "offboarding_resignationletter"
     employee_id: Mapped[int] = mapped_column(Integer)
-    title: Mapped[str] = mapped_column(String(100))
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    title: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     planned_to_leave_on: Mapped[date] = mapped_column(Date)
     status: Mapped[str] = mapped_column(String(20), default="requested")
     offboarding_employee_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 class OffboardingTask(Base, HorillaBaseMixin):
     __tablename__ = "offboarding_offboardingtask"
-    title: Mapped[str] = mapped_column(String(100))
-    stage_id: Mapped[int] = mapped_column(Integer, ForeignKey("offboarding_offboardingstage.id"))
+    __table_args__ = (UniqueConstraint("title", "stage_id", name="uq_offboarding_task_title_stage"),)
+    title: Mapped[str] = mapped_column(String(30))
+    managers: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)  # M2M -> employee_ids
+    stage_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("offboarding_offboardingstage.id"), nullable=True)
 
 class EmployeeTask(Base, HorillaBaseMixin):
     __tablename__ = "offboarding_employeetask"
-    employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("offboarding_offboardingemployee.id"))
+    __table_args__ = (UniqueConstraint("employee_id", "task_id", name="uq_employee_task"),)
+    employee_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("offboarding_offboardingemployee.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="todo")
     task_id: Mapped[int] = mapped_column(Integer, ForeignKey("offboarding_offboardingtask.id"))
+    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    history: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
+class ExitReason(Base, HorillaBaseMixin):
+    __tablename__ = "offboarding_exitreason"
+    title: Mapped[str] = mapped_column(String(50))
+    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    offboarding_employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("offboarding_offboardingemployee.id"))
+    attachments: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)  # M2M -> file_ids
+
+class OffboardingNote(Base, HorillaBaseMixin):
+    __tablename__ = "offboarding_offboardingnote"
+    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    note_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # FK -> employee_id
+    employee_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("offboarding_offboardingemployee.id"), nullable=True)
+    stage_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("offboarding_offboardingstage.id"), nullable=True)
+    attachments: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)  # M2M -> file_ids
+
+class OffboardingGeneralSetting(Base, HorillaBaseMixin):
+    __tablename__ = "offboarding_generalsetting"
+    resignation_request: Mapped[bool] = mapped_column(Boolean, default=False)
+    company_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 from .phm_recruitment import (
     PHMHiringRequest, PHMPositionPrep, PHMIdealCandidateProfile, PHMInterviewQuestionBank,

@@ -51,48 +51,177 @@ class FeedbackRead(HorillaSchema):
     status: str
     is_active: bool = True
 
+class OffboardingStageFileCreate(BaseModel):
+    attachment: Optional[str] = None
+
+class OffboardingStageFileRead(HorillaSchema):
+    id: int
+    attachment: Optional[str] = None
+    is_active: bool = True
+
 class OffboardingCreate(BaseModel):
     title: str
     description: Optional[str] = None
+    managers: Optional[list] = None
+    status: str = "ongoing"
     company_id: Optional[int] = None
 
 class OffboardingRead(HorillaSchema):
     id: int
     title: str
+    description: Optional[str] = None
+    managers: Optional[list] = None
     status: str
+    company_id: Optional[int] = None
+    is_active: bool = True
+
+class OffboardingStageCreate(BaseModel):
+    title: str
+    type: str = "other"
+    offboarding_id: int
+    managers: Optional[list] = None
+    sequence: int = 0
+
+class OffboardingStageRead(HorillaSchema):
+    id: int
+    title: str
+    type: str
+    offboarding_id: int
+    managers: Optional[list] = None
+    sequence: int
+    is_active: bool = True
+
+class OffboardingEmployeeCreate(BaseModel):
+    employee_id: int
+    stage_id: Optional[int] = None
+    notice_period: Optional[int] = None
+    unit: Optional[str] = "month"
+    notice_period_starts: Optional[date] = None
+    notice_period_ends: Optional[date] = None
+
+class OffboardingEmployeeRead(HorillaSchema):
+    id: int
+    employee_id: int
+    stage_id: Optional[int] = None
+    notice_period: Optional[int] = None
+    unit: Optional[str] = None
+    notice_period_starts: Optional[date] = None
+    notice_period_ends: Optional[date] = None
     is_active: bool = True
 
 class ResignationLetterCreate(BaseModel):
     employee_id: int
-    title: str
+    title: Optional[str] = None
     description: Optional[str] = None
     planned_to_leave_on: date
+    status: str = "requested"
+    offboarding_employee_id: Optional[int] = None
 
 class ResignationLetterRead(HorillaSchema):
     id: int
     employee_id: int
-    title: str
+    title: Optional[str] = None
+    description: Optional[str] = None
     planned_to_leave_on: date
     status: str
+    offboarding_employee_id: Optional[int] = None
+    is_active: bool = True
+
+class OffboardingTaskCreate(BaseModel):
+    title: str
+    managers: Optional[list] = None
+    stage_id: Optional[int] = None
+
+class OffboardingTaskRead(HorillaSchema):
+    id: int
+    title: str
+    managers: Optional[list] = None
+    stage_id: Optional[int] = None
+    is_active: bool = True
+
+class EmployeeTaskCreate(BaseModel):
+    employee_id: Optional[int] = None
+    task_id: int
+    status: str = "todo"
+    description: Optional[str] = None
+    history: Optional[dict] = None
+
+class EmployeeTaskRead(HorillaSchema):
+    id: int
+    employee_id: Optional[int] = None
+    task_id: int
+    status: str
+    description: Optional[str] = None
+    history: Optional[dict] = None
+    is_active: bool = True
+
+class ExitReasonCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    offboarding_employee_id: int
+    attachments: Optional[list] = None
+
+class ExitReasonRead(HorillaSchema):
+    id: int
+    title: str
+    description: Optional[str] = None
+    offboarding_employee_id: int
+    attachments: Optional[list] = None
+    is_active: bool = True
+
+class OffboardingNoteCreate(BaseModel):
+    description: Optional[str] = None
+    note_by: Optional[int] = None
+    employee_id: Optional[int] = None
+    stage_id: Optional[int] = None
+    attachments: Optional[list] = None
+
+class OffboardingNoteRead(HorillaSchema):
+    id: int
+    description: Optional[str] = None
+    note_by: Optional[int] = None
+    employee_id: Optional[int] = None
+    stage_id: Optional[int] = None
+    attachments: Optional[list] = None
+    is_active: bool = True
+
+class OffboardingGeneralSettingCreate(BaseModel):
+    resignation_request: bool = False
+    company_id: Optional[int] = None
+
+class OffboardingGeneralSettingRead(HorillaSchema):
+    id: int
+    resignation_request: bool
+    company_id: Optional[int] = None
     is_active: bool = True
 
 class OnboardingStageCreate(BaseModel):
+    stage_title: str
     recruitment_id: int
+    employee_id: Optional[list] = None
     sequence: int = 0
     is_final_stage: bool = False
 
 class OnboardingStageRead(HorillaSchema):
     id: int
+    stage_title: str
     recruitment_id: int
+    employee_id: Optional[list] = None
     sequence: int
     is_final_stage: bool
 
 class OnboardingTaskCreate(BaseModel):
+    task_title: str
     stage_id: int
+    candidates: Optional[list] = None
+    employee_id: Optional[list] = None
 
 class OnboardingTaskRead(HorillaSchema):
     id: int
+    task_title: str
     stage_id: int
+    candidates: Optional[list] = None
+    employee_id: Optional[list] = None
 
 class CandidateStageCreate(BaseModel):
     candidate_id: int
@@ -112,6 +241,7 @@ class CandidateTaskCreate(BaseModel):
     stage_id: int
     onboarding_task_id: int
     status: str = "todo"
+    history: Optional[dict] = None
 
 class CandidateTaskRead(HorillaSchema):
     id: int
@@ -119,12 +249,14 @@ class CandidateTaskRead(HorillaSchema):
     stage_id: int
     onboarding_task_id: int
     status: str
+    history: Optional[dict] = None
 
 class OnboardingPortalCreate(BaseModel):
     candidate_id: int
     token: str
     used: bool = False
     count: int = 0
+    profile: Optional[str] = None
 
 class OnboardingPortalRead(HorillaSchema):
     id: int
@@ -132,6 +264,7 @@ class OnboardingPortalRead(HorillaSchema):
     token: str
     used: bool
     count: int
+    profile: Optional[str] = None
 
 # --- MISSING PMS MODELS ---
 class PeriodCreate(BaseModel):
