@@ -11,6 +11,8 @@ CORE_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/core_db"
 ATTENDANCE_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/attendance_db"
 PAYROLL_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/payroll_db"
 PERMISSION_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/permission_db"
+TALENT_DB_URL = "postgresql+asyncpg://horilla:horilla@postgres:5432/talent_db"
+
 
 def hash_pw(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -158,6 +160,19 @@ async def seed_attendance():
                 (1, '2026-06-21', '08:00:00', '00:00:00', false, true, 0, false, false, false, false, true),
                 (2, '2026-06-21', '08:00:00', '00:00:00', false, true, 0, false, false, false, false, true)
         """))
+        
+        # Leave Requests
+        await db.execute(text("TRUNCATE leave_leaverequest CASCADE"))
+        await db.execute(text("ALTER SEQUENCE IF EXISTS leave_leaverequest_id_seq RESTART WITH 1"))
+        await db.execute(text("""
+            INSERT INTO leave_leaverequest (employee_id, leave_type_id, start_date, end_date, start_date_breakdown, end_date_breakdown, requested_days, leave_clashes_count, description, status, requested_date, is_active) VALUES 
+                (2, 1, '2026-06-25', '2026-06-26', 'full_day', 'full_day', 2.0, 0, 'Going out of station for personal work.', 'requested', '2026-06-20', true),
+                (3, 2, '2026-07-01', '2026-07-01', 'full_day', 'full_day', 1.0, 0, 'Not feeling well.', 'approved', '2026-06-21', true),
+                (4, 1, '2026-07-10', '2026-07-15', 'full_day', 'full_day', 5.0, 0, 'Family vacation.', 'rejected', '2026-06-22', true),
+                (5, 3, '2026-08-01', '2026-08-02', 'full_day', 'full_day', 2.0, 0, 'Attending a conference.', 'requested', '2026-06-23', true)
+        """))
+        await db.execute(text("SELECT setval('leave_leaverequest_id_seq', (SELECT MAX(id) FROM leave_leaverequest))"))
+
         await db.commit()
     await engine.dispose()
 
@@ -221,6 +236,122 @@ async def seed_permission():
         await db.commit()
     await engine.dispose()
 
+async def seed_talent():
+    print("Seeding talent_db...")
+    engine, Session = await get_db_session(TALENT_DB_URL)
+    async with Session() as db:
+        # Offboarding
+        all_offboarding_tables = [
+            'offboarding_employeetask', 'offboarding_exitreason', 'offboarding_offboardingnote',
+            'offboarding_resignationletter', 'offboarding_offboardingemployee',
+            'offboarding_offboardingtask', 'offboarding_offboardingstage',
+            'offboarding_offboarding', 'offboarding_generalsetting', 'offboarding_offboardingstagefile'
+        ]
+        await db.execute(text(f"TRUNCATE {', '.join(all_offboarding_tables)} CASCADE"))
+        for tbl in all_offboarding_tables:
+            await db.execute(text(f"ALTER SEQUENCE IF EXISTS {tbl}_id_seq RESTART WITH 1"))
+
+        # 1. Offboarding Pipeline
+        await db.execute(text("""
+            INSERT INTO offboarding_offboarding (id, title, description, managers, status, company_id, is_active) VALUES
+                (1, 'Standard Exit', 'Standard company offboarding pipeline for all resignations', '[]', 'ongoing', 1, true),
+                (2, 'Involuntary Exit', 'Offboarding pipeline for terminations', '[]', 'ongoing', 1, true)
+        """))
+
+        # 2. Offboarding Stages
+        await db.execute(text("""
+            INSERT INTO offboarding_offboardingstage (id, title, type, offboarding_id, managers, sequence, is_active) VALUES
+                (1, 'Notice Period', 'notice_period', 1, '[]', 1, true),
+                (2, 'Work Handover', 'handover', 1, '[]', 2, true),
+                (3, 'Exit Interview', 'interview', 1, '[]', 3, true),
+                (4, 'FnF Settlement', 'fnf', 1, '[]', 4, true),
+                (5, 'Notice Period', 'notice_period', 2, '[]', 1, true),
+                (6, 'Asset Return', 'other', 2, '[]', 2, true)
+        """))
+
+        # 3. Offboarding Tasks (template)
+        await db.execute(text("""
+            INSERT INTO offboarding_offboardingtask (id, title, managers, stage_id, is_active) VALUES
+                (1, 'Submit Resignation', '[]', 1, true),
+                (2, 'Handover Projects', '[]', 2, true),
+                (3, 'Handover Documents', '[]', 2, true),
+                (4, 'Schedule Interview', '[]', 3, true),
+                (5, 'Complete FnF Form', '[]', 4, true),
+                (6, 'Clear Dues & Advances', '[]', 4, true),
+                (7, 'Return Laptop', '[]', 6, true),
+                (8, 'Return Access Cards', '[]', 6, true)
+        """))
+
+        # 4. General Settings
+        await db.execute(text("""
+            INSERT INTO offboarding_generalsetting (id, resignation_request, company_id, is_active) VALUES
+                (1, true, 1, true)
+        """))
+
+        # 5. Employee Offboarding records (employee_id=4 is Bob Wilson from identity seed)
+        await db.execute(text("""
+            INSERT INTO offboarding_offboardingemployee (id, employee_id, stage_id, notice_period, unit, notice_period_starts, notice_period_ends, is_active) VALUES
+                (1, 4, 1, 30, 'day', '2026-06-25', '2026-07-25', true)
+        """))
+
+        # 6. Resignation Letter
+        await db.execute(text("""
+            INSERT INTO offboarding_resignationletter (id, employee_id, title, description, planned_to_leave_on, status, offboarding_employee_id, is_active) VALUES
+                (1, 4, 'Resignation - Bob Wilson', 'I have decided to pursue new opportunities. Thank you for the experience.', '2026-07-25', 'approved', 1, true)
+        """))
+
+        # 7. Employee Tasks (assigned to Bob's offboarding)
+        await db.execute(text("""
+            INSERT INTO offboarding_employeetask (id, employee_id, task_id, status, description, is_active) VALUES
+                (1, 1, 1, 'completed', 'Resignation letter submitted and approved.', true),
+                (2, 1, 2, 'in_progress', 'Handing over the main product features.', true),
+                (3, 1, 3, 'todo', NULL, true),
+                (4, 1, 4, 'todo', NULL, true)
+        """))
+
+        # 8. Exit Reason
+        await db.execute(text("""
+            INSERT INTO offboarding_exitreason (id, title, description, offboarding_employee_id, attachments, is_active) VALUES
+                (1, 'Better Opportunity', 'Received a better salary and role offer from another company.', 1, '[]', true)
+        """))
+
+        # 9. Offboarding Notes
+        await db.execute(text("""
+            INSERT INTO offboarding_offboardingnote (id, description, note_by, employee_id, stage_id, attachments, is_active) VALUES
+                (1, 'Employee has been cooperative during notice period. No concerns.', 2, 1, 1, '[]', true),
+                (2, 'Handover documentation pending for Project Alpha.', 2, 1, 2, '[]', true)
+        """))
+
+        # PMS
+        await db.execute(text("TRUNCATE pms_period CASCADE"))
+        await db.execute(text("ALTER SEQUENCE IF EXISTS pms_period_id_seq RESTART WITH 1"))
+        await db.execute(text("""
+            INSERT INTO pms_period (id, period_name, start_date, end_date, is_active) VALUES 
+                (1, 'Q1 2026', '2026-01-01', '2026-03-31', true),
+                (2, 'Q2 2026', '2026-04-01', '2026-06-30', true)
+        """))
+
+        # Recruitment (Rejection Reasons)
+        await db.execute(text("TRUNCATE phm_rejection_reason CASCADE"))
+        await db.execute(text("ALTER SEQUENCE IF EXISTS phm_rejection_reason_id_seq RESTART WITH 1"))
+        await db.execute(text("""
+            INSERT INTO phm_rejection_reason (id, reason_name) VALUES 
+                (1, 'Culture Fit'),
+                (2, 'Salary Expectations Too High'),
+                (3, 'Failed Technical Round'),
+                (4, 'Did Not Show Up')
+        """))
+
+
+        # Fix sequences
+        for tbl in all_offboarding_tables:
+            await db.execute(text(f"SELECT setval('{tbl}_id_seq', COALESCE((SELECT MAX(id) FROM {tbl}), 1))"))
+        await db.execute(text("SELECT setval('pms_period_id_seq', (SELECT MAX(id) FROM pms_period))"))
+        await db.execute(text("SELECT setval('phm_rejection_reason_id_seq', (SELECT MAX(id) FROM phm_rejection_reason))"))
+        
+        await db.commit()
+    await engine.dispose()
+
 
 async def main():
     print("Starting database seeding...")
@@ -229,6 +360,7 @@ async def main():
     await seed_attendance()
     await seed_payroll()
     await seed_permission()
+    await seed_talent()
     print("\n✅ SEED COMPLETE!")
     print("\n📋 Login Credentials:")
     print("=" * 50)

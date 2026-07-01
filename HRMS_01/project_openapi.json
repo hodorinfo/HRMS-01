@@ -1,0 +1,359 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Project Service API",
+    "version": "1.0.0",
+    "description": "API specifications for the Project Microservice in HRMS-01"
+  },
+  "paths": {
+    "/create-project": {
+      "post": {
+        "summary": "Create Project",
+        "operationId": "create_project",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/project-list-view": {
+      "get": {
+        "summary": "List Projects",
+        "operationId": "list_projects",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update-project/{pk}": {
+      "put": {
+        "summary": "Update Project",
+        "operationId": "update_project",
+        "parameters": [
+          {
+            "name": "pk",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-task/{project_id}": {
+      "post": {
+        "summary": "Create Task",
+        "operationId": "create_task",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/task-stage-change": {
+      "patch": {
+        "summary": "Change Task Stage",
+        "operationId": "change_task_stage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "task_id": { "type": "integer" },
+                  "new_stage_id": { "type": "integer" },
+                  "sequence": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/create-project-stage/{project_id}": {
+      "post": {
+        "summary": "Create Project Stage",
+        "operationId": "create_project_stage",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectStageCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectStageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/create-time-sheet": {
+      "post": {
+        "summary": "Create Time Sheet",
+        "operationId": "create_time_sheet",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeSheetCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSheetResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProjectCreate": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["new", "in_progress", "completed", "on_hold", "cancelled", "expired"],
+            "default": "new"
+          },
+          "start_date": { "type": "string", "format": "date" },
+          "end_date": { "type": "string", "format": "date", "nullable": true },
+          "managers": {
+            "type": "array",
+            "items": { "type": "integer" }
+          },
+          "members": {
+            "type": "array",
+            "items": { "type": "integer" }
+          }
+        },
+        "required": ["title", "description", "start_date"]
+      },
+      "ProjectResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string" },
+          "start_date": { "type": "string", "format": "date" },
+          "end_date": { "type": "string", "format": "date" },
+          "managers": {
+            "type": "array",
+            "items": { "type": "integer" }
+          },
+          "members": {
+            "type": "array",
+            "items": { "type": "integer" }
+          }
+        }
+      },
+      "TaskCreate": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "stage_id": { "type": "integer" },
+          "description": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["to_do", "in_progress", "completed", "expired"],
+            "default": "to_do"
+          },
+          "start_date": { "type": "string", "format": "date", "nullable": true },
+          "end_date": { "type": "string", "format": "date", "nullable": true },
+          "task_managers": {
+            "type": "array",
+            "items": { "type": "integer" }
+          },
+          "task_members": {
+            "type": "array",
+            "items": { "type": "integer" }
+          }
+        },
+        "required": ["title", "stage_id", "description"]
+      },
+      "TaskResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/TaskCreate" },
+          {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "project_id": { "type": "integer" },
+              "sequence": { "type": "integer" }
+            }
+          }
+        ]
+      },
+      "ProjectStageCreate": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "is_end_stage": { "type": "boolean", "default": false }
+        },
+        "required": ["title"]
+      },
+      "ProjectStageResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ProjectStageCreate" },
+          {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "project_id": { "type": "integer" },
+              "sequence": { "type": "integer" }
+            }
+          }
+        ]
+      },
+      "TimeSheetCreate": {
+        "type": "object",
+        "properties": {
+          "project_id": { "type": "integer" },
+          "task_id": { "type": "integer", "nullable": true },
+          "employee_id": { "type": "integer" },
+          "date": { "type": "string", "format": "date" },
+          "time_spent": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["in_Progress", "completed"],
+            "default": "in_Progress"
+          },
+          "description": { "type": "string" }
+        },
+        "required": ["project_id", "employee_id", "date", "time_spent"]
+      },
+      "TimeSheetResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/TimeSheetCreate" },
+          {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

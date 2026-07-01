@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Generic, Optional, Type, TypeVar
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,6 +37,7 @@ def create_crud_router(
 
     @router.get("", response_model=PaginatedResponse[read_schema])
     async def list_items(
+        request: Request,
         page: int = Query(1, ge=1),
         page_size: int = Query(50, ge=1, le=200),
         db: AsyncSession = Depends(get_db),
@@ -44,8 +45,37 @@ def create_crud_router(
         _perm=_view_perm,
     ):
         offset = (page - 1) * page_size
-        total = await db.scalar(select(func.count()).select_from(model))
-        result = await db.execute(select(model).offset(offset).limit(page_size))
+        
+        from sqlalchemy import or_, String, Text, Integer, Boolean, cast
+        base_query = select(model)
+        
+        for key, value in request.query_params.items():
+            if key not in ["page", "page_size"]:
+                if hasattr(model, key):
+                    column = getattr(model, key)
+                    # Convert types safely
+                    col_type_name = type(column.type).__name__
+                    if col_type_name == "Boolean" or (isinstance(value, str) and value.lower() in ["true", "false"]):
+                        base_query = base_query.where(column == (value.lower() == "true"))
+                    elif col_type_name in ["Integer", "BigInteger", "SmallInteger"]:
+                        if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
+                            base_query = base_query.where(column == int(value))
+                    elif col_type_name in ["String", "Text", "VARCHAR", "Enum"]:
+                        base_query = base_query.where(func.lower(cast(column, String)) == value.lower())
+                    else:
+                        base_query = base_query.where(cast(column, String) == value)
+                elif key == "search" and value.strip():
+                    # Generic text search across all String/Text columns
+                    text_columns = [
+                        getattr(model, c.name) for c in model.__table__.columns
+                        if type(c.type).__name__ in ["String", "Text", "VARCHAR"]
+                    ]
+                    if text_columns:
+                        search_filters = [c.ilike(f"%{value}%") for c in text_columns]
+                        base_query = base_query.where(or_(*search_filters))
+
+        total = await db.scalar(select(func.count()).select_from(base_query.subquery()))
+        result = await db.execute(base_query.offset(offset).limit(page_size))
         items = result.scalars().all()
         pages = (total + page_size - 1) // page_size if total else 0
         return PaginatedResponse(
