@@ -135,6 +135,12 @@ class ShiftRequest(Base, HorillaBaseMixin):
     canceled: Mapped[bool] = mapped_column(Boolean, default=False)
     shift_changed: Mapped[bool] = mapped_column(Boolean, default=False)
 
+class ShiftRequestComment(Base, HorillaBaseMixin):
+    __tablename__ = "base_shiftrequestcomment"
+    request_id: Mapped[int] = mapped_column(Integer, ForeignKey("base_shiftrequest.id", ondelete="CASCADE"))
+    employee_id: Mapped[int] = mapped_column(Integer)
+    comment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
 class Holidays(Base, HorillaBaseMixin):
     __tablename__ = "base_holidays"
     name: Mapped[str] = mapped_column(String(30))

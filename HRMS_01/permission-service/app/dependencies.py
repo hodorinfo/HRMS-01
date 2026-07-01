@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from horilla_common.dependencies import create_auth_dependency
@@ -18,3 +18,15 @@ get_current_user, oauth2_scheme = create_auth_dependency(
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 CurrentUser = Annotated[TokenPayload, Depends(get_current_user)]
+
+
+def require_permission(codename: str):
+    async def _perm_check(
+        current_user: Annotated[TokenPayload, Depends(get_current_user)],
+    ) -> TokenPayload:
+        if current_user.is_superuser:
+            return current_user
+        if codename not in current_user.permissions:
+            raise HTTPException(status_code=403, detail=f"Permission denied: {codename}")
+        return current_user
+    return _perm_check

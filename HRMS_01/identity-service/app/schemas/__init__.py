@@ -221,6 +221,9 @@ class EmployeeBankDetailsRead(HorillaSchema):
     any_other_code2: Optional[str] = None
     additional_info: Optional[dict] = None
 
+class EmployeeListItemRead(EmployeeRead):
+    work_info: Optional[EmployeeWorkInformationRead] = None
+
 class EmployeeProfileRead(EmployeeRead):
     work_info: Optional[EmployeeWorkInformationRead] = None
     bank_details: Optional[EmployeeBankDetailsRead] = None
@@ -324,7 +327,7 @@ class ActiontypeRead(HorillaSchema):
     is_active: bool = True
 
 class DisciplinaryActionCreate(BaseModel):
-    employee_id: int
+    employee_ids: list[int]
     action_id: int
     description: Optional[str] = None
     unit_in: str = "days"
@@ -334,7 +337,7 @@ class DisciplinaryActionCreate(BaseModel):
     attachment: Optional[str] = None
 
 class DisciplinaryActionUpdate(BaseModel):
-    employee_id: Optional[int] = None
+    employee_ids: Optional[list[int]] = None
     action_id: Optional[int] = None
     description: Optional[str] = None
     unit_in: Optional[str] = None
@@ -345,7 +348,7 @@ class DisciplinaryActionUpdate(BaseModel):
 
 class DisciplinaryActionRead(HorillaSchema):
     id: int
-    employee_id: int
+    employee_ids: list[int] = []
     action_id: int
     description: Optional[str] = None
     unit_in: str
@@ -354,6 +357,14 @@ class DisciplinaryActionRead(HorillaSchema):
     start_date: Optional[date] = None
     attachment: Optional[str] = None
     is_active: bool = True
+
+class DisciplinaryBulkIdsRequest(BaseModel):
+    ids: list[int]
+
+class DisciplinaryBulkActionResponse(BaseModel):
+    updated_count: int
+    failed_count: int = 0
+    errors: Optional[list[str]] = None
 
 class BonusPointCreate(BaseModel):
     employee_id: Optional[int] = None

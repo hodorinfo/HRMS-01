@@ -26,8 +26,14 @@ def create_crud_router(
     get_current_user: Callable,
     module: str,
     id_field: str = "id",
+    get_permission_dep: Optional[Callable[[str], Callable]] = None,
 ) -> APIRouter:
     router = APIRouter(prefix=prefix, tags=[module])
+
+    _view_perm = Depends(get_permission_dep("view")) if get_permission_dep else Depends(get_current_user)
+    _add_perm = Depends(get_permission_dep("add")) if get_permission_dep else Depends(get_current_user)
+    _change_perm = Depends(get_permission_dep("change")) if get_permission_dep else Depends(get_current_user)
+    _delete_perm = Depends(get_permission_dep("delete")) if get_permission_dep else Depends(get_current_user)
 
     @router.get("", response_model=PaginatedResponse[read_schema])
     async def list_items(
@@ -35,6 +41,7 @@ def create_crud_router(
         page_size: int = Query(50, ge=1, le=200),
         db: AsyncSession = Depends(get_db),
         _user=Depends(get_current_user),
+        _perm=_view_perm,
     ):
         offset = (page - 1) * page_size
         total = await db.scalar(select(func.count()).select_from(model))
@@ -54,6 +61,7 @@ def create_crud_router(
         item_id: int,
         db: AsyncSession = Depends(get_db),
         _user=Depends(get_current_user),
+        _perm=_view_perm,
     ):
         result = await db.execute(select(model).where(getattr(model, id_field) == item_id))
         item = result.scalar_one_or_none()
@@ -66,6 +74,7 @@ def create_crud_router(
         data: create_schema,
         db: AsyncSession = Depends(get_db),
         user=Depends(get_current_user),
+        _perm=_add_perm,
     ):
         item = model(**data.model_dump(exclude_unset=True))
         if hasattr(item, "created_by_id"):
@@ -97,6 +106,7 @@ def create_crud_router(
         data: update_schema,
         db: AsyncSession = Depends(get_db),
         user=Depends(get_current_user),
+        _perm=_change_perm,
     ):
         result = await db.execute(select(model).where(getattr(model, id_field) == item_id))
         item = result.scalar_one_or_none()
@@ -131,6 +141,7 @@ def create_crud_router(
         item_id: int,
         db: AsyncSession = Depends(get_db),
         _user=Depends(get_current_user),
+        _perm=_delete_perm,
     ):
         result = await db.execute(select(model).where(getattr(model, id_field) == item_id))
         item = result.scalar_one_or_none()

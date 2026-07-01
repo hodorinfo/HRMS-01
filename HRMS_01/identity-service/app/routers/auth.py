@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from horilla_common.jwt import create_access_token, create_refresh_token, decode_token
 from app.config import get_settings
 from app.database import get_db
-from app.dependencies import CurrentUser, DbSession
+from app.dependencies import CurrentUser, DbSession, require_permission
 from app.models import Employee, User
 from app.schemas import (
     LoginRequest, TokenResponse, UserCreate, UserRead, UserUpdate,
@@ -47,12 +47,29 @@ async def login(db: DbSession, form_data: OAuth2PasswordRequestForm = Depends())
     
     emp_result = await db.execute(select(Employee).where(Employee.employee_user_id == user.id))
     employee = emp_result.scalar_one_or_none()
+    
+    permissions = []
+    if not user.is_superuser:
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
+                resp = await client.get(
+                    f"{settings.permission_service_url}/api/v1/internal/users/{user.id}/permissions",
+                    headers={"X-Service-Token": settings.internal_service_token},
+                )
+                if resp.status_code == 200:
+                    permissions = resp.json()
+        except Exception:
+            permissions = []
+    
     token_data = {
         "sub": user.username,
         "user_id": user.id,
         "employee_id": employee.id if employee else None,
         "is_superuser": user.is_superuser,
         "is_staff": user.is_staff,
+        "permissions": permissions,
+        "token_version": user.token_version,
     }
     return TokenResponse(
         access_token=create_access_token(token_data, settings.jwt_secret_key, settings.jwt_algorithm, settings.jwt_access_token_expire_minutes),
@@ -74,7 +91,11 @@ async def refresh_token(refresh_token: str):
         raise HTTPException(status_code=401, detail="Invalid refresh token") from exc
 
 @router.get("/me", response_model=UserRead)
-async def me(db: DbSession, current_user: CurrentUser):
+async def me(
+    db: DbSession,
+    current_user: CurrentUser,
+    _perm = Depends(require_permission("identity.view_ownprofile")),
+):
     result = await db.execute(select(User).where(User.id == current_user.user_id))
     user = result.scalar_one_or_none()
     if not user:
@@ -95,14 +116,21 @@ async def register(data: UserCreate, db: DbSession):
     existing = await db.execute(select(User).where((User.username == data.username) | (User.email == data.email)))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="User already exists")
+    
+    # Check if this is the first user in the system
+    from sqlalchemy import func
+    user_count_result = await db.execute(select(func.count()).select_from(User))
+    user_count = user_count_result.scalar()
+    is_first_user = (user_count == 0)
+
     user = User(
         username=data.username,
         email=data.email,
         password_hash=hash_password(data.password),
         first_name=data.first_name,
         last_name=data.last_name,
-        is_staff=data.is_staff,
-        is_superuser=data.is_superuser,
+        is_staff=is_first_user,      # Backend decides
+        is_superuser=is_first_user,  # Backend decides
     )
     db.add(user)
     await db.flush()
@@ -110,7 +138,12 @@ async def register(data: UserCreate, db: DbSession):
     return UserRead.model_validate(user)
 
 @router.put("/me", response_model=UserRead)
-async def update_me(data: UserUpdate, db: DbSession, current_user: CurrentUser):
+async def update_me(
+    data: UserUpdate,
+    db: DbSession,
+    current_user: CurrentUser,
+    _perm = Depends(require_permission("identity.change_ownprofile")),
+):
     result = await db.execute(select(User).where(User.id == current_user.user_id))
     user = result.scalar_one_or_none()
     if not user:
@@ -125,7 +158,12 @@ async def update_me(data: UserUpdate, db: DbSession, current_user: CurrentUser):
     return UserRead.model_validate(user)
 
 @router.post("/change-password")
-async def change_password(data: ChangePasswordRequest, db: DbSession, current_user: CurrentUser):
+async def change_password(
+    data: ChangePasswordRequest,
+    db: DbSession,
+    current_user: CurrentUser,
+    _perm = Depends(require_permission("identity.change_ownprofile")),
+):
     result = await db.execute(select(User).where(User.id == current_user.user_id))
     user = result.scalar_one_or_none()
     if not user:

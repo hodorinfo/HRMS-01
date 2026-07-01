@@ -23,6 +23,7 @@ class User(Base):
     is_new_employee: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    token_version: Mapped[int] = mapped_column(Integer, default=0)
 
 
 employee_tags = Table("employee_employeeworkinformation_tags", Base.metadata,
@@ -162,7 +163,7 @@ class Actiontype(Base, HorillaBaseMixin):
 
 class DisciplinaryAction(Base, HorillaBaseMixin):
     __tablename__ = "employee_disciplinaryaction"
-    employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("employee_employee.id", ondelete="CASCADE"))
+    employee_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     action_id: Mapped[int] = mapped_column(Integer, ForeignKey("employee_actiontype.id", ondelete="CASCADE"))
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     unit_in: Mapped[str] = mapped_column(String(10), default="days")
@@ -170,6 +171,26 @@ class DisciplinaryAction(Base, HorillaBaseMixin):
     hours: Mapped[str] = mapped_column(String(6), default="00:00")
     start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     attachment: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
+    employee_assignments: Mapped[list["DisciplinaryActionEmployee"]] = relationship(
+        "DisciplinaryActionEmployee", back_populates="disciplinary_action",
+        passive_deletes=True,
+    )
+
+
+class DisciplinaryActionEmployee(Base):
+    __tablename__ = "employee_disciplinaryaction_employee"
+    disciplinary_action_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("employee_disciplinaryaction.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    employee_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("employee_employee.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    disciplinary_action: Mapped["DisciplinaryAction"] = relationship(
+        "DisciplinaryAction", back_populates="employee_assignments"
+    )
 
 
 class EmployeeGeneralSetting(Base, HorillaBaseMixin):

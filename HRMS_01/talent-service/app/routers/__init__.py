@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from horilla_common.crud import create_crud_router
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_permission
 from app.models import (
     Objective, EmployeeObjective, Feedback, Offboarding, ResignationLetter, 
     OnboardingStage, OnboardingTask, CandidateStage, CandidateTask, OnboardingPortal,
@@ -56,7 +56,11 @@ for prefix, model, create, update, read, module_name in [
     ("/candidate-tasks", CandidateTask, CandidateTaskCreate, CandidateTaskRead, CandidateTaskRead, "Onboarding"),
     ("/onboarding-portals", OnboardingPortal, OnboardingPortalCreate, OnboardingPortalRead, OnboardingPortalRead, "Onboarding"),
 ]:
-    api_router.include_router(create_crud_router(prefix, model, create, update, read, get_db, get_current_user, module_name))
+    model_name = model.__name__.lower()
+    api_router.include_router(create_crud_router(
+        prefix, model, create, update, read, get_db, get_current_user, module_name,
+        get_permission_dep=lambda action, mn=model_name: require_permission(f"talent.{action}_{mn}"),
+    ))
 
 # --- THESE ARE THE NEW RECRUITMENT ENDPOINTS (PHM 2.0) ---
 from app.routers import phm_recruitment

@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 from datetime import date
 from pydantic import BaseModel, ConfigDict
-from horilla_common.schemas import HorillaSchemaBase
+from horilla_common.schemas import HorillaAuditSchema
 
 class RotatingShiftAssignBase(BaseModel):
     employee_id: Optional[int] = None
@@ -30,7 +30,8 @@ class RotatingShiftAssignUpdate(BaseModel):
     rotate_after_day: Optional[int] = None
     rotate_every_weekend: Optional[str] = None
     rotate_every: Optional[str] = None
+    is_active: Optional[bool] = None
     additional_data: Optional[Dict[str, Any]] = None
 
-class RotatingShiftAssignRead(HorillaSchemaBase, RotatingShiftAssignBase):
-    id: int
+class RotatingShiftAssignRead(HorillaAuditSchema, RotatingShiftAssignBase):
+    pass

@@ -2,6 +2,17 @@ from datetime import date
 from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
+
+class BulkIdsRequest(BaseModel):
+    ids: list[int]
+
+
+class BulkActionResponse(BaseModel):
+    success: bool
+    updated_count: int
+    failed_count: int = 0
+    errors: list[str] = []
+
 class ShiftRequestCreate(BaseModel):
     employee_id: Optional[int] = None
     shift_id: int
@@ -15,10 +26,16 @@ class ShiftRequestCreate(BaseModel):
     shift_changed: bool = False
 
 class ShiftRequestUpdate(BaseModel):
+    employee_id: Optional[int] = None
+    shift_id: Optional[int] = None
+    previous_shift_id: Optional[int] = None
+    requested_date: Optional[date] = None
+    requested_till: Optional[date] = None
+    description: Optional[str] = None
+    is_permanent_shift: Optional[bool] = None
     approved: Optional[bool] = None
     canceled: Optional[bool] = None
     shift_changed: Optional[bool] = None
-    description: Optional[str] = None
     is_active: Optional[bool] = None
 
 class ShiftRequestRead(BaseModel):

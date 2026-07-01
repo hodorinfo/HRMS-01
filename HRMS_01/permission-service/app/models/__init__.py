@@ -13,7 +13,7 @@ class Permission(Base):
     __table_args__ = (UniqueConstraint("module", "action", name="uq_module_action"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     module: Mapped[str] = mapped_column(String(50))
-    action: Mapped[str] = mapped_column(String(20))
+    action: Mapped[str] = mapped_column(String(50))
     codename: Mapped[str] = mapped_column(String(100), unique=True)
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

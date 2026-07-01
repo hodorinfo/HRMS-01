@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     permission_service_url: str = "http://permission-service:8000"
     core_service_url: str = "http://core-service:8000"
     identity_service_url: str = "http://identity-service:8000"
+    upload_base: str = "/media/documents"
+    max_file_size_mb: int = 150
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_user: str = "dummy@gmail.com"

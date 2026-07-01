@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from horilla_common.crud import create_crud_router
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_permission
 from app.models import Contract, Allowance, Deduction, Payslip, LoanAccount, FilingStatus, Reimbursement
 from app.schemas import (
     ContractCreate, ContractUpdate, ContractRead,
@@ -25,7 +25,11 @@ for prefix, model, create, update, read, module_name in [
     ("/filing-status", FilingStatus, FilingStatusCreate, FilingStatusUpdate, FilingStatusRead, "Tax & Filing Status"),
     ("/reimbursements", Reimbursement, ReimbursementCreate, ReimbursementUpdate, ReimbursementRead, "Reimbursements"),
 ]:
-    api_router.include_router(create_crud_router(prefix, model, create, update, read, get_db, get_current_user, module_name))
+    model_name = model.__name__.lower()
+    api_router.include_router(create_crud_router(
+        prefix, model, create, update, read, get_db, get_current_user, module_name,
+        get_permission_dep=lambda action, mn=model_name: require_permission(f"payroll.{action}_{mn}"),
+    ))
 
 # Register Legacy Actions (Custom Endpoints)
 from app.routers import legacy_actions

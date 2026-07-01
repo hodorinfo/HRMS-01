@@ -1,7 +1,18 @@
 from typing import Optional, Dict, Any
 from datetime import date
 from pydantic import BaseModel, ConfigDict
-from horilla_common.schemas import HorillaSchemaBase
+from horilla_common.schemas import HorillaAuditSchema
+
+
+class BulkIdsRequest(BaseModel):
+    ids: list[int]
+
+
+class BulkActionResponse(BaseModel):
+    success: bool
+    updated_count: int
+    failed_count: int = 0
+    errors: list[str] = []
 
 class RotatingWorkTypeAssignBase(BaseModel):
     employee_id: Optional[int] = None
@@ -31,6 +42,7 @@ class RotatingWorkTypeAssignUpdate(BaseModel):
     rotate_every_weekend: Optional[str] = None
     rotate_every: Optional[str] = None
     additional_data: Optional[Dict[str, Any]] = None
+    is_active: Optional[bool] = None
 
-class RotatingWorkTypeAssignRead(HorillaSchemaBase, RotatingWorkTypeAssignBase):
-    id: int
+class RotatingWorkTypeAssignRead(HorillaAuditSchema, RotatingWorkTypeAssignBase):
+    pass

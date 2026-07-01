@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from horilla_common.base import Base, HorillaBaseMixin
 
 class MailAutomation(Base, HorillaBaseMixin):
@@ -41,18 +41,28 @@ class HistoryTrackingFields(Base, HorillaBaseMixin):
     tracking_fields: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     work_info_track: Mapped[bool] = mapped_column(Boolean, default=False)
 
+class DocumentRequestAssignment(Base, HorillaBaseMixin):
+    __tablename__ = "horilla_documents_documentrequestassignment"
+    document_request_id: Mapped[int] = mapped_column(Integer, ForeignKey("horilla_documents_documentrequest.id", ondelete="CASCADE"))
+    employee_id: Mapped[int] = mapped_column(Integer)
+
 class DocumentRequest(Base, HorillaBaseMixin):
     __tablename__ = "horilla_documents_documentrequest"
     title: Mapped[str] = mapped_column(String(100))
     format: Mapped[str] = mapped_column(String(20), default="any")
-    max_size: Mapped[int] = mapped_column(Integer, default=5)
+    max_size: Mapped[int] = mapped_column(Integer, default=150)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    assignments: Mapped[list[DocumentRequestAssignment]] = relationship(
+        "DocumentRequestAssignment", backref="document_request",
+        cascade="all, delete-orphan",
+        foreign_keys=[DocumentRequestAssignment.document_request_id],
+    )
 
 class Document(Base, HorillaBaseMixin):
     __tablename__ = "horilla_documents_document"
     title: Mapped[str] = mapped_column(String(100))
     employee_id: Mapped[int] = mapped_column(Integer)
-    document_request_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("horilla_documents_documentrequest.id"), nullable=True)
+    document_request_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("horilla_documents_documentrequest.id", ondelete="SET NULL"), nullable=True)
     document: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="requested")
     reject_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

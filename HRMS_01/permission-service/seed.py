@@ -1,32 +1,728 @@
 """Seed default permissions and roles on startup."""
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from app.models import Permission, Role
 
-MODULES = ["Base", "Employee", "Attendance", "Leave", "Payroll", "Recruitment", "PMS", "Onboarding", "Offboarding", "Asset", "Project", "Helpdesk"]
-ACTIONS = ["view", "add", "change", "delete"]
-DEFAULT_ROLES = {
-    "Admin": ACTIONS,
-    "Manager": ["view", "add", "change"],
-    "Employee": ["view"],
-}
+IDENTITY_PERMISSIONS = [
+    # Employee
+    ("identity", "add_employee", "identity.add_employee", "Can add Employee"),
+    ("identity", "change_employee", "identity.change_employee", "Can change Employee"),
+    ("identity", "delete_employee", "identity.delete_employee", "Can delete Employee"),
+    ("identity", "view_employee", "identity.view_employee", "Can view Employee"),
+    ("identity", "view_ownprofile", "identity.view_ownprofile", "Can view own profile"),
+    ("identity", "change_ownprofile", "identity.change_ownprofile", "Can change own profile"),
+    # EmployeeTag
+    ("identity", "add_employeetag", "identity.add_employeetag", "Can add Employee Tag"),
+    ("identity", "change_employeetag", "identity.change_employeetag", "Can change Employee Tag"),
+    ("identity", "delete_employeetag", "identity.delete_employeetag", "Can delete Employee Tag"),
+    ("identity", "view_employeetag", "identity.view_employeetag", "Can view Employee Tag"),
+    # EmployeeWorkInformation
+    ("identity", "add_employeeworkinformation", "identity.add_employeeworkinformation", "Can add Employee Work Information"),
+    ("identity", "change_employeeworkinformation", "identity.change_employeeworkinformation", "Can change Employee Work Information"),
+    ("identity", "delete_employeeworkinformation", "identity.delete_employeeworkinformation", "Can delete Employee Work Information"),
+    ("identity", "view_employeeworkinformation", "identity.view_employeeworkinformation", "Can view Employee Work Information"),
+    # EmployeeBankDetails
+    ("identity", "add_employeebankdetails", "identity.add_employeebankdetails", "Can add Employee Bank Details"),
+    ("identity", "change_employeebankdetails", "identity.change_employeebankdetails", "Can change Employee Bank Details"),
+    ("identity", "delete_employeebankdetails", "identity.delete_employeebankdetails", "Can delete Employee Bank Details"),
+    ("identity", "view_employeebankdetails", "identity.view_employeebankdetails", "Can view Employee Bank Details"),
+    # EmployeeNote
+    ("identity", "add_employeenote", "identity.add_employeenote", "Can add Employee Note"),
+    ("identity", "change_employeenote", "identity.change_employeenote", "Can change Employee Note"),
+    ("identity", "delete_employeenote", "identity.delete_employeenote", "Can delete Employee Note"),
+    ("identity", "view_employeenote", "identity.view_employeenote", "Can view Employee Note"),
+    # Policy
+    ("identity", "add_policy", "identity.add_policy", "Can add Policy"),
+    ("identity", "change_policy", "identity.change_policy", "Can change Policy"),
+    ("identity", "delete_policy", "identity.delete_policy", "Can delete Policy"),
+    ("identity", "view_policy", "identity.view_policy", "Can view Policy"),
+    # BonusPoint
+    ("identity", "add_bonuspoint", "identity.add_bonuspoint", "Can add Bonus Point"),
+    ("identity", "change_bonuspoint", "identity.change_bonuspoint", "Can change Bonus Point"),
+    ("identity", "delete_bonuspoint", "identity.delete_bonuspoint", "Can delete Bonus Point"),
+    ("identity", "view_bonuspoint", "identity.view_bonuspoint", "Can view Bonus Point"),
+    # Actiontype
+    ("identity", "add_actiontype", "identity.add_actiontype", "Can add Action Type"),
+    ("identity", "change_actiontype", "identity.change_actiontype", "Can change Action Type"),
+    ("identity", "delete_actiontype", "identity.delete_actiontype", "Can delete Action Type"),
+    ("identity", "view_actiontype", "identity.view_actiontype", "Can view Action Type"),
+    # DisciplinaryAction
+    ("identity", "add_disciplinaryaction", "identity.add_disciplinaryaction", "Can add Disciplinary Action"),
+    ("identity", "change_disciplinaryaction", "identity.change_disciplinaryaction", "Can change Disciplinary Action"),
+    ("identity", "delete_disciplinaryaction", "identity.delete_disciplinaryaction", "Can delete Disciplinary Action"),
+    ("identity", "view_disciplinaryaction", "identity.view_disciplinaryaction", "Can view Disciplinary Action"),
+    # EmployeeGeneralSetting
+    ("identity", "add_employeegeneralsetting", "identity.add_employeegeneralsetting", "Can add Employee General Setting"),
+    ("identity", "change_employeegeneralsetting", "identity.change_employeegeneralsetting", "Can change Employee General Setting"),
+    ("identity", "delete_employeegeneralsetting", "identity.delete_employeegeneralsetting", "Can delete Employee General Setting"),
+    ("identity", "view_employeegeneralsetting", "identity.view_employeegeneralsetting", "Can view Employee General Setting"),
+    # ProfileEditFeature
+    ("identity", "add_profileeditfeature", "identity.add_profileeditfeature", "Can add Profile Edit Feature"),
+    ("identity", "change_profileeditfeature", "identity.change_profileeditfeature", "Can change Profile Edit Feature"),
+    ("identity", "delete_profileeditfeature", "identity.delete_profileeditfeature", "Can delete Profile Edit Feature"),
+    ("identity", "view_profileeditfeature", "identity.view_profileeditfeature", "Can view Profile Edit Feature"),
+    # DefaultAccessibility
+    ("identity", "add_defaultaccessibility", "identity.add_defaultaccessibility", "Can add Default Accessibility"),
+    ("identity", "change_defaultaccessibility", "identity.change_defaultaccessibility", "Can change Default Accessibility"),
+    ("identity", "delete_defaultaccessibility", "identity.delete_defaultaccessibility", "Can delete Default Accessibility"),
+    ("identity", "view_defaultaccessibility", "identity.view_defaultaccessibility", "Can view Default Accessibility"),
+    # LDAPSettings
+    ("identity", "add_ldapsettings", "identity.add_ldapsettings", "Can add LDAP Settings"),
+    ("identity", "change_ldapsettings", "identity.change_ldapsettings", "Can change LDAP Settings"),
+    ("identity", "delete_ldapsettings", "identity.delete_ldapsettings", "Can delete LDAP Settings"),
+    ("identity", "view_ldapsettings", "identity.view_ldapsettings", "Can view LDAP Settings"),
+    # AzureApi / Outlook
+    ("identity", "add_azureapi", "identity.add_azureapi", "Can add Azure API"),
+    ("identity", "change_azureapi", "identity.change_azureapi", "Can change Azure API"),
+    ("identity", "delete_azureapi", "identity.delete_azureapi", "Can delete Azure API"),
+    ("identity", "view_azureapi", "identity.view_azureapi", "Can view Azure API"),
+]
+
+PERMISSION_SERVICE_PERMISSIONS = [
+    ("permission", "assign_role", "permission.assign_role", "Can assign roles to users"),
+    ("permission", "add_group", "permission.add_group", "Can create roles/groups"),
+    ("permission", "view_user_permissions", "permission.view_user_permissions", "Can view other users' permissions"),
+]
+
+CORE_PERMISSIONS = [
+    ("core", "add_company", "core.add_company", "Can add Company"),
+    ("core", "change_company", "core.change_company", "Can change Company"),
+    ("core", "delete_company", "core.delete_company", "Can delete Company"),
+    ("core", "view_company", "core.view_company", "Can view Company"),
+    ("core", "add_department", "core.add_department", "Can add Department"),
+    ("core", "change_department", "core.change_department", "Can change Department"),
+    ("core", "delete_department", "core.delete_department", "Can delete Department"),
+    ("core", "view_department", "core.view_department", "Can view Department"),
+    ("core", "add_jobposition", "core.add_jobposition", "Can add Job Position"),
+    ("core", "change_jobposition", "core.change_jobposition", "Can change Job Position"),
+    ("core", "delete_jobposition", "core.delete_jobposition", "Can delete Job Position"),
+    ("core", "view_jobposition", "core.view_jobposition", "Can view Job Position"),
+    ("core", "add_jobrole", "core.add_jobrole", "Can add Job Role"),
+    ("core", "change_jobrole", "core.change_jobrole", "Can change Job Role"),
+    ("core", "delete_jobrole", "core.delete_jobrole", "Can delete Job Role"),
+    ("core", "view_jobrole", "core.view_jobrole", "Can view Job Role"),
+    ("core", "add_worktype", "core.add_worktype", "Can add Work Type"),
+    ("core", "change_worktype", "core.change_worktype", "Can change Work Type"),
+    ("core", "delete_worktype", "core.delete_worktype", "Can delete Work Type"),
+    ("core", "view_worktype", "core.view_worktype", "Can view Work Type"),
+    ("core", "add_employeetype", "core.add_employeetype", "Can add Employee Type"),
+    ("core", "change_employeetype", "core.change_employeetype", "Can change Employee Type"),
+    ("core", "delete_employeetype", "core.delete_employeetype", "Can delete Employee Type"),
+    ("core", "view_employeetype", "core.view_employeetype", "Can view Employee Type"),
+    ("core", "add_employeeshiftday", "core.add_employeeshiftday", "Can add Employee Shift Day"),
+    ("core", "change_employeeshiftday", "core.change_employeeshiftday", "Can change Employee Shift Day"),
+    ("core", "delete_employeeshiftday", "core.delete_employeeshiftday", "Can delete Employee Shift Day"),
+    ("core", "view_employeeshiftday", "core.view_employeeshiftday", "Can view Employee Shift Day"),
+    ("core", "add_employeeshift", "core.add_employeeshift", "Can add Employee Shift"),
+    ("core", "change_employeeshift", "core.change_employeeshift", "Can change Employee Shift"),
+    ("core", "delete_employeeshift", "core.delete_employeeshift", "Can delete Employee Shift"),
+    ("core", "view_employeeshift", "core.view_employeeshift", "Can view Employee Shift"),
+    ("core", "add_employeeshiftschedule", "core.add_employeeshiftschedule", "Can add Employee Shift Schedule"),
+    ("core", "change_employeeshiftschedule", "core.change_employeeshiftschedule", "Can change Employee Shift Schedule"),
+    ("core", "delete_employeeshiftschedule", "core.delete_employeeshiftschedule", "Can delete Employee Shift Schedule"),
+    ("core", "view_employeeshiftschedule", "core.view_employeeshiftschedule", "Can view Employee Shift Schedule"),
+    ("core", "add_rotatingworktype", "core.add_rotatingworktype", "Can add Rotating Work Type"),
+    ("core", "change_rotatingworktype", "core.change_rotatingworktype", "Can change Rotating Work Type"),
+    ("core", "delete_rotatingworktype", "core.delete_rotatingworktype", "Can delete Rotating Work Type"),
+    ("core", "view_rotatingworktype", "core.view_rotatingworktype", "Can view Rotating Work Type"),
+    ("core", "add_rotatingworktypeassign", "core.add_rotatingworktypeassign", "Can add Rotating Work Type Assign"),
+    ("core", "change_rotatingworktypeassign", "core.change_rotatingworktypeassign", "Can change Rotating Work Type Assign"),
+    ("core", "delete_rotatingworktypeassign", "core.delete_rotatingworktypeassign", "Can delete Rotating Work Type Assign"),
+    ("core", "view_rotatingworktypeassign", "core.view_rotatingworktypeassign", "Can view Rotating Work Type Assign"),
+    ("core", "add_rotatingshift", "core.add_rotatingshift", "Can add Rotating Shift"),
+    ("core", "change_rotatingshift", "core.change_rotatingshift", "Can change Rotating Shift"),
+    ("core", "delete_rotatingshift", "core.delete_rotatingshift", "Can delete Rotating Shift"),
+    ("core", "view_rotatingshift", "core.view_rotatingshift", "Can view Rotating Shift"),
+    ("core", "add_rotatingshiftassign", "core.add_rotatingshiftassign", "Can add Rotating Shift Assign"),
+    ("core", "change_rotatingshiftassign", "core.change_rotatingshiftassign", "Can change Rotating Shift Assign"),
+    ("core", "delete_rotatingshiftassign", "core.delete_rotatingshiftassign", "Can delete Rotating Shift Assign"),
+    ("core", "view_rotatingshiftassign", "core.view_rotatingshiftassign", "Can view Rotating Shift Assign"),
+    ("core", "add_worktyperequest", "core.add_worktyperequest", "Can add Work Type Request"),
+    ("core", "change_worktyperequest", "core.change_worktyperequest", "Can change Work Type Request"),
+    ("core", "delete_worktyperequest", "core.delete_worktyperequest", "Can delete Work Type Request"),
+    ("core", "view_worktyperequest", "core.view_worktyperequest", "Can view Work Type Request"),
+    ("core", "approve_worktyperequest", "core.approve_worktyperequest", "Approve Work Type Request"),
+    ("core", "cancel_worktyperequest", "core.cancel_worktyperequest", "Cancel Work Type Request"),
+    ("core", "add_shiftrequest", "core.add_shiftrequest", "Can add Shift Request"),
+    ("core", "change_shiftrequest", "core.change_shiftrequest", "Can change Shift Request"),
+    ("core", "delete_shiftrequest", "core.delete_shiftrequest", "Can delete Shift Request"),
+    ("core", "view_shiftrequest", "core.view_shiftrequest", "Can view Shift Request"),
+    ("core", "approve_shiftrequest", "core.approve_shiftrequest", "Approve Shift Request"),
+    ("core", "cancel_shiftrequest", "core.cancel_shiftrequest", "Cancel Shift Request"),
+    ("core", "add_shiftrequestcomment", "core.add_shiftrequestcomment", "Can add Shift Request Comment"),
+    ("core", "change_shiftrequestcomment", "core.change_shiftrequestcomment", "Can change Shift Request Comment"),
+    ("core", "delete_shiftrequestcomment", "core.delete_shiftrequestcomment", "Can delete Shift Request Comment"),
+    ("core", "view_shiftrequestcomment", "core.view_shiftrequestcomment", "Can view Shift Request Comment"),
+    ("core", "add_holidays", "core.add_holidays", "Can add Holidays"),
+    ("core", "change_holidays", "core.change_holidays", "Can change Holidays"),
+    ("core", "delete_holidays", "core.delete_holidays", "Can delete Holidays"),
+    ("core", "view_holidays", "core.view_holidays", "Can view Holidays"),
+    ("core", "add_companyleaves", "core.add_companyleaves", "Can add Company Leaves"),
+    ("core", "change_companyleaves", "core.change_companyleaves", "Can change Company Leaves"),
+    ("core", "delete_companyleaves", "core.delete_companyleaves", "Can delete Company Leaves"),
+    ("core", "view_companyleaves", "core.view_companyleaves", "Can view Company Leaves"),
+    ("core", "add_multipleapprovalcondition", "core.add_multipleapprovalcondition", "Can add Multiple Approval Condition"),
+    ("core", "change_multipleapprovalcondition", "core.change_multipleapprovalcondition", "Can change Multiple Approval Condition"),
+    ("core", "delete_multipleapprovalcondition", "core.delete_multipleapprovalcondition", "Can delete Multiple Approval Condition"),
+    ("core", "view_multipleapprovalcondition", "core.view_multipleapprovalcondition", "Can view Multiple Approval Condition"),
+    ("core", "add_multipleapprovalmanagers", "core.add_multipleapprovalmanagers", "Can add Multiple Approval Managers"),
+    ("core", "change_multipleapprovalmanagers", "core.change_multipleapprovalmanagers", "Can change Multiple Approval Managers"),
+    ("core", "delete_multipleapprovalmanagers", "core.delete_multipleapprovalmanagers", "Can delete Multiple Approval Managers"),
+    ("core", "view_multipleapprovalmanagers", "core.view_multipleapprovalmanagers", "Can view Multiple Approval Managers"),
+    ("core", "add_announcement", "core.add_announcement", "Can add Announcement"),
+    ("core", "change_announcement", "core.change_announcement", "Can change Announcement"),
+    ("core", "delete_announcement", "core.delete_announcement", "Can delete Announcement"),
+    ("core", "view_announcement", "core.view_announcement", "Can view Announcement"),
+    ("core", "add_announcementcomment", "core.add_announcementcomment", "Can add Announcement Comment"),
+    ("core", "change_announcementcomment", "core.change_announcementcomment", "Can change Announcement Comment"),
+    ("core", "delete_announcementcomment", "core.delete_announcementcomment", "Can delete Announcement Comment"),
+    ("core", "view_announcementcomment", "core.view_announcementcomment", "Can view Announcement Comment"),
+    ("core", "add_announcementview", "core.add_announcementview", "Can add Announcement View"),
+    ("core", "change_announcementview", "core.change_announcementview", "Can change Announcement View"),
+    ("core", "delete_announcementview", "core.delete_announcementview", "Can delete Announcement View"),
+    ("core", "view_announcementview", "core.view_announcementview", "Can view Announcement View"),
+    ("core", "add_horillamailtemplate", "core.add_horillamailtemplate", "Can add Horilla Mail Template"),
+    ("core", "change_horillamailtemplate", "core.change_horillamailtemplate", "Can change Horilla Mail Template"),
+    ("core", "delete_horillamailtemplate", "core.delete_horillamailtemplate", "Can delete Horilla Mail Template"),
+    ("core", "view_horillamailtemplate", "core.view_horillamailtemplate", "Can view Horilla Mail Template"),
+]
+
+ATTENDANCE_PERMISSIONS = [
+    # Attendance
+    ("attendance", "add_attendance", "attendance.add_attendance", "Can add Attendance"),
+    ("attendance", "change_attendance", "attendance.change_attendance", "Can change Attendance"),
+    ("attendance", "delete_attendance", "attendance.delete_attendance", "Can delete Attendance"),
+    ("attendance", "view_attendance", "attendance.view_attendance", "Can view Attendance"),
+    ("attendance", "change_approveovertime", "attendance.change_approveovertime", "Can approve overtime"),
+    ("attendance", "change_validateattendance", "attendance.change_validateattendance", "Can validate attendance"),
+    ("attendance", "regularize_attendance", "attendance.regularize_attendance", "Can regularize attendance"),
+    # AttendanceActivity
+    ("attendance", "add_attendanceactivity", "attendance.add_attendanceactivity", "Can add Attendance Activity"),
+    ("attendance", "change_attendanceactivity", "attendance.change_attendanceactivity", "Can change Attendance Activity"),
+    ("attendance", "delete_attendanceactivity", "attendance.delete_attendanceactivity", "Can delete Attendance Activity"),
+    ("attendance", "view_attendanceactivity", "attendance.view_attendanceactivity", "Can view Attendance Activity"),
+    # AttendanceOvertime
+    ("attendance", "add_attendanceovertime", "attendance.add_attendanceovertime", "Can add Attendance Overtime"),
+    ("attendance", "change_attendanceovertime", "attendance.change_attendanceovertime", "Can change Attendance Overtime"),
+    ("attendance", "delete_attendanceovertime", "attendance.delete_attendanceovertime", "Can delete Attendance Overtime"),
+    ("attendance", "view_attendanceovertime", "attendance.view_attendanceovertime", "Can view Attendance Overtime"),
+    # BatchAttendance
+    ("attendance", "add_batchattendance", "attendance.add_batchattendance", "Can add Batch Attendance"),
+    ("attendance", "change_batchattendance", "attendance.change_batchattendance", "Can change Batch Attendance"),
+    ("attendance", "delete_batchattendance", "attendance.delete_batchattendance", "Can delete Batch Attendance"),
+    ("attendance", "view_batchattendance", "attendance.view_batchattendance", "Can view Batch Attendance"),
+    # AttendanceLateComeEarlyOut
+    ("attendance", "add_attendancelatecomeearlyout", "attendance.add_attendancelatecomeearlyout", "Can add Late Come Early Out"),
+    ("attendance", "change_attendancelatecomeearlyout", "attendance.change_attendancelatecomeearlyout", "Can change Late Come Early Out"),
+    ("attendance", "delete_attendancelatecomeearlyout", "attendance.delete_attendancelatecomeearlyout", "Can delete Late Come Early Out"),
+    ("attendance", "view_attendancelatecomeearlyout", "attendance.view_attendancelatecomeearlyout", "Can view Late Come Early Out"),
+    # GraceTime
+    ("attendance", "add_gracetime", "attendance.add_gracetime", "Can add Grace Time"),
+    ("attendance", "change_gracetime", "attendance.change_gracetime", "Can change Grace Time"),
+    ("attendance", "delete_gracetime", "attendance.delete_gracetime", "Can delete Grace Time"),
+    ("attendance", "view_gracetime", "attendance.view_gracetime", "Can view Grace Time"),
+    # AttendanceGeneralSetting
+    ("attendance", "add_attendancegeneralsetting", "attendance.add_attendancegeneralsetting", "Can add Attendance General Setting"),
+    ("attendance", "change_attendancegeneralsetting", "attendance.change_attendancegeneralsetting", "Can change Attendance General Setting"),
+    ("attendance", "delete_attendancegeneralsetting", "attendance.delete_attendancegeneralsetting", "Can delete Attendance General Setting"),
+    ("attendance", "view_attendancegeneralsetting", "attendance.view_attendancegeneralsetting", "Can view Attendance General Setting"),
+    # LeaveType
+    ("attendance", "add_leavetype", "attendance.add_leavetype", "Can add Leave Type"),
+    ("attendance", "change_leavetype", "attendance.change_leavetype", "Can change Leave Type"),
+    ("attendance", "delete_leavetype", "attendance.delete_leavetype", "Can delete Leave Type"),
+    ("attendance", "view_leavetype", "attendance.view_leavetype", "Can view Leave Type"),
+    # AvailableLeave
+    ("attendance", "add_availableleave", "attendance.add_availableleave", "Can add Available Leave"),
+    ("attendance", "change_availableleave", "attendance.change_availableleave", "Can change Available Leave"),
+    ("attendance", "delete_availableleave", "attendance.delete_availableleave", "Can delete Available Leave"),
+    ("attendance", "view_availableleave", "attendance.view_availableleave", "Can view Available Leave"),
+    # LeaveRequest
+    ("attendance", "add_leaverequest", "attendance.add_leaverequest", "Can add Leave Request"),
+    ("attendance", "change_leaverequest", "attendance.change_leaverequest", "Can change Leave Request"),
+    ("attendance", "delete_leaverequest", "attendance.delete_leaverequest", "Can delete Leave Request"),
+    ("attendance", "view_leaverequest", "attendance.view_leaverequest", "Can view Leave Request"),
+    ("attendance", "approve_leaverequest", "attendance.approve_leaverequest", "Can approve Leave Request"),
+    # LeaveRequestComment
+    ("attendance", "add_leaverequestcomment", "attendance.add_leaverequestcomment", "Can add Leave Request Comment"),
+    ("attendance", "change_leaverequestcomment", "attendance.change_leaverequestcomment", "Can change Leave Request Comment"),
+    ("attendance", "delete_leaverequestcomment", "attendance.delete_leaverequestcomment", "Can delete Leave Request Comment"),
+    ("attendance", "view_leaverequestcomment", "attendance.view_leaverequestcomment", "Can view Leave Request Comment"),
+    # LeaveRequestFile
+    ("attendance", "add_leaverequestfile", "attendance.add_leaverequestfile", "Can add Leave Request File"),
+    ("attendance", "change_leaverequestfile", "attendance.change_leaverequestfile", "Can change Leave Request File"),
+    ("attendance", "delete_leaverequestfile", "attendance.delete_leaverequestfile", "Can delete Leave Request File"),
+    ("attendance", "view_leaverequestfile", "attendance.view_leaverequestfile", "Can view Leave Request File"),
+    # LeaveAllocationRequest
+    ("attendance", "add_leaveallocationrequest", "attendance.add_leaveallocationrequest", "Can add Leave Allocation Request"),
+    ("attendance", "change_leaveallocationrequest", "attendance.change_leaveallocationrequest", "Can change Leave Allocation Request"),
+    ("attendance", "delete_leaveallocationrequest", "attendance.delete_leaveallocationrequest", "Can delete Leave Allocation Request"),
+    ("attendance", "view_leaveallocationrequest", "attendance.view_leaveallocationrequest", "Can view Leave Allocation Request"),
+    # CompensatoryLeaveRequest
+    ("attendance", "add_compensatoryleaverequest", "attendance.add_compensatoryleaverequest", "Can add Compensatory Leave Request"),
+    ("attendance", "change_compensatoryleaverequest", "attendance.change_compensatoryleaverequest", "Can change Compensatory Leave Request"),
+    ("attendance", "delete_compensatoryleaverequest", "attendance.delete_compensatoryleaverequest", "Can delete Compensatory Leave Request"),
+    ("attendance", "view_compensatoryleaverequest", "attendance.view_compensatoryleaverequest", "Can view Compensatory Leave Request"),
+    # RestrictLeave
+    ("attendance", "add_restrictleave", "attendance.add_restrictleave", "Can add Restrict Leave"),
+    ("attendance", "change_restrictleave", "attendance.change_restrictleave", "Can change Restrict Leave"),
+    ("attendance", "delete_restrictleave", "attendance.delete_restrictleave", "Can delete Restrict Leave"),
+    ("attendance", "view_restrictleave", "attendance.view_restrictleave", "Can view Restrict Leave"),
+    # BiometricDevices
+    ("attendance", "add_biometricdevices", "attendance.add_biometricdevices", "Can add Biometric Devices"),
+    ("attendance", "change_biometricdevices", "attendance.change_biometricdevices", "Can change Biometric Devices"),
+    ("attendance", "delete_biometricdevices", "attendance.delete_biometricdevices", "Can delete Biometric Devices"),
+    ("attendance", "view_biometricdevices", "attendance.view_biometricdevices", "Can view Biometric Devices"),
+    # BiometricEmployees
+    ("attendance", "add_biometricemployees", "attendance.add_biometricemployees", "Can add Biometric Employees"),
+    ("attendance", "change_biometricemployees", "attendance.change_biometricemployees", "Can change Biometric Employees"),
+    ("attendance", "delete_biometricemployees", "attendance.delete_biometricemployees", "Can delete Biometric Employees"),
+    ("attendance", "view_biometricemployees", "attendance.view_biometricemployees", "Can view Biometric Employees"),
+    # GeoFencing
+    ("attendance", "add_geofencing", "attendance.add_geofencing", "Can add Geo Fencing"),
+    ("attendance", "change_geofencing", "attendance.change_geofencing", "Can change Geo Fencing"),
+    ("attendance", "delete_geofencing", "attendance.delete_geofencing", "Can delete Geo Fencing"),
+    ("attendance", "view_geofencing", "attendance.view_geofencing", "Can view Geo Fencing"),
+    # FaceDetection
+    ("attendance", "add_facedetection", "attendance.add_facedetection", "Can add Face Detection"),
+    ("attendance", "change_facedetection", "attendance.change_facedetection", "Can change Face Detection"),
+    ("attendance", "delete_facedetection", "attendance.delete_facedetection", "Can delete Face Detection"),
+    ("attendance", "view_facedetection", "attendance.view_facedetection", "Can view Face Detection"),
+    # EmployeeFaceDetection
+    ("attendance", "add_employeefacedetection", "attendance.add_employeefacedetection", "Can add Employee Face Detection"),
+    ("attendance", "change_employeefacedetection", "attendance.change_employeefacedetection", "Can change Employee Face Detection"),
+    ("attendance", "delete_employeefacedetection", "attendance.delete_employeefacedetection", "Can delete Employee Face Detection"),
+    ("attendance", "view_employeefacedetection", "attendance.view_employeefacedetection", "Can view Employee Face Detection"),
+    # Custom actions
+    ("attendance", "export_attendance_report", "attendance.export_attendance_report", "Can export attendance report"),
+]
+
+PAYROLL_PERMISSIONS = [
+    # FilingStatus
+    ("payroll", "add_filingstatus", "payroll.add_filingstatus", "Can add Filing Status"),
+    ("payroll", "change_filingstatus", "payroll.change_filingstatus", "Can change Filing Status"),
+    ("payroll", "delete_filingstatus", "payroll.delete_filingstatus", "Can delete Filing Status"),
+    ("payroll", "view_filingstatus", "payroll.view_filingstatus", "Can view Filing Status"),
+    # Contract
+    ("payroll", "add_contract", "payroll.add_contract", "Can add Contract"),
+    ("payroll", "change_contract", "payroll.change_contract", "Can change Contract"),
+    ("payroll", "delete_contract", "payroll.delete_contract", "Can delete Contract"),
+    ("payroll", "view_contract", "payroll.view_contract", "Can view Contract"),
+    # Allowance
+    ("payroll", "add_allowance", "payroll.add_allowance", "Can add Allowance"),
+    ("payroll", "change_allowance", "payroll.change_allowance", "Can change Allowance"),
+    ("payroll", "delete_allowance", "payroll.delete_allowance", "Can delete Allowance"),
+    ("payroll", "view_allowance", "payroll.view_allowance", "Can view Allowance"),
+    # Deduction
+    ("payroll", "add_deduction", "payroll.add_deduction", "Can add Deduction"),
+    ("payroll", "change_deduction", "payroll.change_deduction", "Can change Deduction"),
+    ("payroll", "delete_deduction", "payroll.delete_deduction", "Can delete Deduction"),
+    ("payroll", "view_deduction", "payroll.view_deduction", "Can view Deduction"),
+    # Payslip
+    ("payroll", "add_payslip", "payroll.add_payslip", "Can add Payslip"),
+    ("payroll", "change_payslip", "payroll.change_payslip", "Can change Payslip"),
+    ("payroll", "delete_payslip", "payroll.delete_payslip", "Can delete Payslip"),
+    ("payroll", "view_payslip", "payroll.view_payslip", "Can view Payslip"),
+    ("payroll", "generate_bulk_payslip", "payroll.generate_bulk_payslip", "Can generate bulk payslip"),
+    ("payroll", "approve_payslip", "payroll.approve_payslip", "Can approve payslip"),
+    # LoanAccount
+    ("payroll", "add_loanaccount", "payroll.add_loanaccount", "Can add Loan Account"),
+    ("payroll", "change_loanaccount", "payroll.change_loanaccount", "Can change Loan Account"),
+    ("payroll", "delete_loanaccount", "payroll.delete_loanaccount", "Can delete Loan Account"),
+    ("payroll", "view_loanaccount", "payroll.view_loanaccount", "Can view Loan Account"),
+    # Reimbursement
+    ("payroll", "add_reimbursement", "payroll.add_reimbursement", "Can add Reimbursement"),
+    ("payroll", "change_reimbursement", "payroll.change_reimbursement", "Can change Reimbursement"),
+    ("payroll", "delete_reimbursement", "payroll.delete_reimbursement", "Can delete Reimbursement"),
+    ("payroll", "view_reimbursement", "payroll.view_reimbursement", "Can view Reimbursement"),
+    # Custom actions
+    ("payroll", "view_salary_reports", "payroll.view_salary_reports", "Can view salary reports"),
+]
+
+PLATFORM_PERMISSIONS = [
+    # MailAutomation
+    ("platform", "add_mailautomation", "platform.add_mailautomation", "Can add Mail Automation"),
+    ("platform", "change_mailautomation", "platform.change_mailautomation", "Can change Mail Automation"),
+    ("platform", "delete_mailautomation", "platform.delete_mailautomation", "Can delete Mail Automation"),
+    ("platform", "view_mailautomation", "platform.view_mailautomation", "Can view Mail Automation"),
+    # Notification
+    ("platform", "add_notification", "platform.add_notification", "Can add Notification"),
+    ("platform", "change_notification", "platform.change_notification", "Can change Notification"),
+    ("platform", "delete_notification", "platform.delete_notification", "Can delete Notification"),
+    ("platform", "view_notification", "platform.view_notification", "Can view Notification"),
+    # AuditTag
+    ("platform", "add_audittag", "platform.add_audittag", "Can add Audit Tag"),
+    ("platform", "change_audittag", "platform.change_audittag", "Can change Audit Tag"),
+    ("platform", "delete_audittag", "platform.delete_audittag", "Can delete Audit Tag"),
+    ("platform", "view_audittag", "platform.view_audittag", "Can view Audit Tag"),
+    # HistoryTrackingFields
+    ("platform", "add_historytrackingfields", "platform.add_historytrackingfields", "Can add History Tracking Fields"),
+    ("platform", "change_historytrackingfields", "platform.change_historytrackingfields", "Can change History Tracking Fields"),
+    ("platform", "delete_historytrackingfields", "platform.delete_historytrackingfields", "Can delete History Tracking Fields"),
+    ("platform", "view_historytrackingfields", "platform.view_historytrackingfields", "Can view History Tracking Fields"),
+    # Document
+    ("platform", "add_document", "platform.add_document", "Can add Document"),
+    ("platform", "change_document", "platform.change_document", "Can change Document"),
+    ("platform", "delete_document", "platform.delete_document", "Can delete Document"),
+    ("platform", "view_document", "platform.view_document", "Can view Document"),
+    # DocumentRequest
+    ("platform", "add_documentrequest", "platform.add_documentrequest", "Can add Document Request"),
+    ("platform", "change_documentrequest", "platform.change_documentrequest", "Can change Document Request"),
+    ("platform", "delete_documentrequest", "platform.delete_documentrequest", "Can delete Document Request"),
+    ("platform", "view_documentrequest", "platform.view_documentrequest", "Can view Document Request"),
+    # DocumentRequestAssignment
+    ("platform", "add_documentrequestassignment", "platform.add_documentrequestassignment", "Can add Document Request Assignment"),
+    ("platform", "change_documentrequestassignment", "platform.change_documentrequestassignment", "Can change Document Request Assignment"),
+    ("platform", "delete_documentrequestassignment", "platform.delete_documentrequestassignment", "Can delete Document Request Assignment"),
+    ("platform", "view_documentrequestassignment", "platform.view_documentrequestassignment", "Can view Document Request Assignment"),
+]
+
+TALENT_PERMISSIONS = [
+    # PHM Recruitment
+    ("talent", "add_phmhiringrequest", "talent.add_phmhiringrequest", "Can add PHM Hiring Request"),
+    ("talent", "change_phmhiringrequest", "talent.change_phmhiringrequest", "Can change PHM Hiring Request"),
+    ("talent", "delete_phmhiringrequest", "talent.delete_phmhiringrequest", "Can delete PHM Hiring Request"),
+    ("talent", "view_phmhiringrequest", "talent.view_phmhiringrequest", "Can view PHM Hiring Request"),
+    ("talent", "add_phmpositionprep", "talent.add_phmpositionprep", "Can add PHM Position Prep"),
+    ("talent", "change_phmpositionprep", "talent.change_phmpositionprep", "Can change PHM Position Prep"),
+    ("talent", "delete_phmpositionprep", "talent.delete_phmpositionprep", "Can delete PHM Position Prep"),
+    ("talent", "view_phmpositionprep", "talent.view_phmpositionprep", "Can view PHM Position Prep"),
+    ("talent", "add_phmjobdescription", "talent.add_phmjobdescription", "Can add PHM Job Description"),
+    ("talent", "change_phmjobdescription", "talent.change_phmjobdescription", "Can change PHM Job Description"),
+    ("talent", "delete_phmjobdescription", "talent.delete_phmjobdescription", "Can delete PHM Job Description"),
+    ("talent", "view_phmjobdescription", "talent.view_phmjobdescription", "Can view PHM Job Description"),
+    ("talent", "add_phmidealcandidateprofile", "talent.add_phmidealcandidateprofile", "Can add PHM Ideal Candidate Profile"),
+    ("talent", "change_phmidealcandidateprofile", "talent.change_phmidealcandidateprofile", "Can change PHM Ideal Candidate Profile"),
+    ("talent", "delete_phmidealcandidateprofile", "talent.delete_phmidealcandidateprofile", "Can delete PHM Ideal Candidate Profile"),
+    ("talent", "view_phmidealcandidateprofile", "talent.view_phmidealcandidateprofile", "Can view PHM Ideal Candidate Profile"),
+    ("talent", "add_phminterviewquestionbank", "talent.add_phminterviewquestionbank", "Can add PHM Interview Question Bank"),
+    ("talent", "change_phminterviewquestionbank", "talent.change_phminterviewquestionbank", "Can change PHM Interview Question Bank"),
+    ("talent", "delete_phminterviewquestionbank", "talent.delete_phminterviewquestionbank", "Can delete PHM Interview Question Bank"),
+    ("talent", "view_phminterviewquestionbank", "talent.view_phminterviewquestionbank", "Can view PHM Interview Question Bank"),
+    ("talent", "add_phmsourcingchannel", "talent.add_phmsourcingchannel", "Can add PHM Sourcing Channel"),
+    ("talent", "change_phmsourcingchannel", "talent.change_phmsourcingchannel", "Can change PHM Sourcing Channel"),
+    ("talent", "delete_phmsourcingchannel", "talent.delete_phmsourcingchannel", "Can delete PHM Sourcing Channel"),
+    ("talent", "view_phmsourcingchannel", "talent.view_phmsourcingchannel", "Can view PHM Sourcing Channel"),
+    ("talent", "add_phmpipelinestage", "talent.add_phmpipelinestage", "Can add PHM Pipeline Stage"),
+    ("talent", "change_phmpipelinestage", "talent.change_phmpipelinestage", "Can change PHM Pipeline Stage"),
+    ("talent", "delete_phmpipelinestage", "talent.delete_phmpipelinestage", "Can delete PHM Pipeline Stage"),
+    ("talent", "view_phmpipelinestage", "talent.view_phmpipelinestage", "Can view PHM Pipeline Stage"),
+    ("talent", "add_phmrejectionreason", "talent.add_phmrejectionreason", "Can add PHM Rejection Reason"),
+    ("talent", "change_phmrejectionreason", "talent.change_phmrejectionreason", "Can change PHM Rejection Reason"),
+    ("talent", "delete_phmrejectionreason", "talent.delete_phmrejectionreason", "Can delete PHM Rejection Reason"),
+    ("talent", "view_phmrejectionreason", "talent.view_phmrejectionreason", "Can view PHM Rejection Reason"),
+    ("talent", "add_phmcandidate", "talent.add_phmcandidate", "Can add PHM Candidate"),
+    ("talent", "change_phmcandidate", "talent.change_phmcandidate", "Can change PHM Candidate"),
+    ("talent", "delete_phmcandidate", "talent.delete_phmcandidate", "Can delete PHM Candidate"),
+    ("talent", "view_phmcandidate", "talent.view_phmcandidate", "Can view PHM Candidate"),
+    ("talent", "add_phmcandidatescreening", "talent.add_phmcandidatescreening", "Can add PHM Candidate Screening"),
+    ("talent", "change_phmcandidatescreening", "talent.change_phmcandidatescreening", "Can change PHM Candidate Screening"),
+    ("talent", "delete_phmcandidatescreening", "talent.delete_phmcandidatescreening", "Can delete PHM Candidate Screening"),
+    ("talent", "view_phmcandidatescreening", "talent.view_phmcandidatescreening", "Can view PHM Candidate Screening"),
+    ("talent", "add_phminterviewschedule", "talent.add_phminterviewschedule", "Can add PHM Interview Schedule"),
+    ("talent", "change_phminterviewschedule", "talent.change_phminterviewschedule", "Can change PHM Interview Schedule"),
+    ("talent", "delete_phminterviewschedule", "talent.delete_phminterviewschedule", "Can delete PHM Interview Schedule"),
+    ("talent", "view_phminterviewschedule", "talent.view_phminterviewschedule", "Can view PHM Interview Schedule"),
+    ("talent", "add_phminterviewfeedback", "talent.add_phminterviewfeedback", "Can add PHM Interview Feedback"),
+    ("talent", "change_phminterviewfeedback", "talent.change_phminterviewfeedback", "Can change PHM Interview Feedback"),
+    ("talent", "delete_phminterviewfeedback", "talent.delete_phminterviewfeedback", "Can delete PHM Interview Feedback"),
+    ("talent", "view_phminterviewfeedback", "talent.view_phminterviewfeedback", "Can view PHM Interview Feedback"),
+    ("talent", "add_phmofferdetails", "talent.add_phmofferdetails", "Can add PHM Offer Details"),
+    ("talent", "change_phmofferdetails", "talent.change_phmofferdetails", "Can change PHM Offer Details"),
+    ("talent", "delete_phmofferdetails", "talent.delete_phmofferdetails", "Can delete PHM Offer Details"),
+    ("talent", "view_phmofferdetails", "talent.view_phmofferdetails", "Can view PHM Offer Details"),
+    ("talent", "add_phmhiringerrorflag", "talent.add_phmhiringerrorflag", "Can add PHM Hiring Error Flag"),
+    ("talent", "change_phmhiringerrorflag", "talent.change_phmhiringerrorflag", "Can change PHM Hiring Error Flag"),
+    ("talent", "delete_phmhiringerrorflag", "talent.delete_phmhiringerrorflag", "Can delete PHM Hiring Error Flag"),
+    ("talent", "view_phmhiringerrorflag", "talent.view_phmhiringerrorflag", "Can view PHM Hiring Error Flag"),
+    ("talent", "add_phmhiringmastertemplate", "talent.add_phmhiringmastertemplate", "Can add PHM Hiring Master Template"),
+    ("talent", "change_phmhiringmastertemplate", "talent.change_phmhiringmastertemplate", "Can change PHM Hiring Master Template"),
+    ("talent", "delete_phmhiringmastertemplate", "talent.delete_phmhiringmastertemplate", "Can delete PHM Hiring Master Template"),
+    ("talent", "view_phmhiringmastertemplate", "talent.view_phmhiringmastertemplate", "Can view PHM Hiring Master Template"),
+    ("talent", "add_phmmasterprocessstep", "talent.add_phmmasterprocessstep", "Can add PHM Master Process Step"),
+    ("talent", "change_phmmasterprocessstep", "talent.change_phmmasterprocessstep", "Can change PHM Master Process Step"),
+    ("talent", "delete_phmmasterprocessstep", "talent.delete_phmmasterprocessstep", "Can delete PHM Master Process Step"),
+    ("talent", "view_phmmasterprocessstep", "talent.view_phmmasterprocessstep", "Can view PHM Master Process Step"),
+    ("talent", "add_phmstepdependency", "talent.add_phmstepdependency", "Can add PHM Step Dependency"),
+    ("talent", "change_phmstepdependency", "talent.change_phmstepdependency", "Can change PHM Step Dependency"),
+    ("talent", "delete_phmstepdependency", "talent.delete_phmstepdependency", "Can delete PHM Step Dependency"),
+    ("talent", "view_phmstepdependency", "talent.view_phmstepdependency", "Can view PHM Step Dependency"),
+    ("talent", "add_phmrequeststeptracker", "talent.add_phmrequeststeptracker", "Can add PHM Request Step Tracker"),
+    ("talent", "change_phmrequeststeptracker", "talent.change_phmrequeststeptracker", "Can change PHM Request Step Tracker"),
+    ("talent", "delete_phmrequeststeptracker", "talent.delete_phmrequeststeptracker", "Can delete PHM Request Step Tracker"),
+    ("talent", "view_phmrequeststeptracker", "talent.view_phmrequeststeptracker", "Can view PHM Request Step Tracker"),
+    # PMS
+    ("talent", "add_period", "talent.add_period", "Can add Period"),
+    ("talent", "change_period", "talent.change_period", "Can change Period"),
+    ("talent", "delete_period", "talent.delete_period", "Can delete Period"),
+    ("talent", "view_period", "talent.view_period", "Can view Period"),
+    ("talent", "add_keyresult", "talent.add_keyresult", "Can add Key Result"),
+    ("talent", "change_keyresult", "talent.change_keyresult", "Can change Key Result"),
+    ("talent", "delete_keyresult", "talent.delete_keyresult", "Can delete Key Result"),
+    ("talent", "view_keyresult", "talent.view_keyresult", "Can view Key Result"),
+    ("talent", "add_objective", "talent.add_objective", "Can add Objective"),
+    ("talent", "change_objective", "talent.change_objective", "Can change Objective"),
+    ("talent", "delete_objective", "talent.delete_objective", "Can delete Objective"),
+    ("talent", "view_objective", "talent.view_objective", "Can view Objective"),
+    ("talent", "add_employeeobjective", "talent.add_employeeobjective", "Can add Employee Objective"),
+    ("talent", "change_employeeobjective", "talent.change_employeeobjective", "Can change Employee Objective"),
+    ("talent", "delete_employeeobjective", "talent.delete_employeeobjective", "Can delete Employee Objective"),
+    ("talent", "view_employeeobjective", "talent.view_employeeobjective", "Can view Employee Objective"),
+    ("talent", "add_feedback", "talent.add_feedback", "Can add Feedback"),
+    ("talent", "change_feedback", "talent.change_feedback", "Can change Feedback"),
+    ("talent", "delete_feedback", "talent.delete_feedback", "Can delete Feedback"),
+    ("talent", "view_feedback", "talent.view_feedback", "Can view Feedback"),
+    # Onboarding
+    ("talent", "add_onboardingstage", "talent.add_onboardingstage", "Can add Onboarding Stage"),
+    ("talent", "change_onboardingstage", "talent.change_onboardingstage", "Can change Onboarding Stage"),
+    ("talent", "delete_onboardingstage", "talent.delete_onboardingstage", "Can delete Onboarding Stage"),
+    ("talent", "view_onboardingstage", "talent.view_onboardingstage", "Can view Onboarding Stage"),
+    ("talent", "add_onboardingtask", "talent.add_onboardingtask", "Can add Onboarding Task"),
+    ("talent", "change_onboardingtask", "talent.change_onboardingtask", "Can change Onboarding Task"),
+    ("talent", "delete_onboardingtask", "talent.delete_onboardingtask", "Can delete Onboarding Task"),
+    ("talent", "view_onboardingtask", "talent.view_onboardingtask", "Can view Onboarding Task"),
+    ("talent", "add_candidatestage", "talent.add_candidatestage", "Can add Candidate Stage"),
+    ("talent", "change_candidatestage", "talent.change_candidatestage", "Can change Candidate Stage"),
+    ("talent", "delete_candidatestage", "talent.delete_candidatestage", "Can delete Candidate Stage"),
+    ("talent", "view_candidatestage", "talent.view_candidatestage", "Can view Candidate Stage"),
+    ("talent", "add_candidatetask", "talent.add_candidatetask", "Can add Candidate Task"),
+    ("talent", "change_candidatetask", "talent.change_candidatetask", "Can change Candidate Task"),
+    ("talent", "delete_candidatetask", "talent.delete_candidatetask", "Can delete Candidate Task"),
+    ("talent", "view_candidatetask", "talent.view_candidatetask", "Can view Candidate Task"),
+    ("talent", "add_onboardingportal", "talent.add_onboardingportal", "Can add Onboarding Portal"),
+    ("talent", "change_onboardingportal", "talent.change_onboardingportal", "Can change Onboarding Portal"),
+    ("talent", "delete_onboardingportal", "talent.delete_onboardingportal", "Can delete Onboarding Portal"),
+    ("talent", "view_onboardingportal", "talent.view_onboardingportal", "Can view Onboarding Portal"),
+    # Offboarding
+    ("talent", "add_offboarding", "talent.add_offboarding", "Can add Offboarding"),
+    ("talent", "change_offboarding", "talent.change_offboarding", "Can change Offboarding"),
+    ("talent", "delete_offboarding", "talent.delete_offboarding", "Can delete Offboarding"),
+    ("talent", "view_offboarding", "talent.view_offboarding", "Can view Offboarding"),
+    ("talent", "add_offboardingstage", "talent.add_offboardingstage", "Can add Offboarding Stage"),
+    ("talent", "change_offboardingstage", "talent.change_offboardingstage", "Can change Offboarding Stage"),
+    ("talent", "delete_offboardingstage", "talent.delete_offboardingstage", "Can delete Offboarding Stage"),
+    ("talent", "view_offboardingstage", "talent.view_offboardingstage", "Can view Offboarding Stage"),
+    ("talent", "add_offboardingemployee", "talent.add_offboardingemployee", "Can add Offboarding Employee"),
+    ("talent", "change_offboardingemployee", "talent.change_offboardingemployee", "Can change Offboarding Employee"),
+    ("talent", "delete_offboardingemployee", "talent.delete_offboardingemployee", "Can delete Offboarding Employee"),
+    ("talent", "view_offboardingemployee", "talent.view_offboardingemployee", "Can view Offboarding Employee"),
+    ("talent", "add_resignationletter", "talent.add_resignationletter", "Can add Resignation Letter"),
+    ("talent", "change_resignationletter", "talent.change_resignationletter", "Can change Resignation Letter"),
+    ("talent", "delete_resignationletter", "talent.delete_resignationletter", "Can delete Resignation Letter"),
+    ("talent", "view_resignationletter", "talent.view_resignationletter", "Can view Resignation Letter"),
+    ("talent", "add_offboardingtask", "talent.add_offboardingtask", "Can add Offboarding Task"),
+    ("talent", "change_offboardingtask", "talent.change_offboardingtask", "Can change Offboarding Task"),
+    ("talent", "delete_offboardingtask", "talent.delete_offboardingtask", "Can delete Offboarding Task"),
+    ("talent", "view_offboardingtask", "talent.view_offboardingtask", "Can view Offboarding Task"),
+    ("talent", "add_employeetask", "talent.add_employeetask", "Can add Employee Task"),
+    ("talent", "change_employeetask", "talent.change_employeetask", "Can change Employee Task"),
+    ("talent", "delete_employeetask", "talent.delete_employeetask", "Can delete Employee Task"),
+    ("talent", "view_employeetask", "talent.view_employeetask", "Can view Employee Task"),
+]
+
 
 async def seed_permissions(db: AsyncSession):
-    for module in MODULES:
-        for action in ACTIONS:
-            codename = f"{action}_{module.lower()}"
-            existing = await db.execute(select(Permission).where(Permission.codename == codename))
-            if not existing.scalar_one_or_none():
-                db.add(Permission(module=module, action=action, codename=codename, name=f"Can {action} {module}"))
-    await db.flush()
-    for role_name, actions in DEFAULT_ROLES.items():
-        existing = await db.execute(select(Role).where(Role.name == role_name))
+    for module, action, codename, name in IDENTITY_PERMISSIONS + PERMISSION_SERVICE_PERMISSIONS + CORE_PERMISSIONS + ATTENDANCE_PERMISSIONS + PAYROLL_PERMISSIONS + PLATFORM_PERMISSIONS + TALENT_PERMISSIONS:
+        existing = await db.execute(select(Permission).where(Permission.codename == codename))
         if not existing.scalar_one_or_none():
+            db.add(Permission(module=module, action=action, codename=codename, name=name))
+    await db.flush()
+
+    role_defs = {
+        "Super Admin": {"all": True},
+        "HR Manager": {
+            "view": True,
+            "add_employee": True, "change_employee": True, "delete_employee": True,
+            "add_employeetag": True, "change_employeetag": True, "delete_employeetag": True,
+            "add_employeeworkinformation": True, "change_employeeworkinformation": True,
+            "view_employeeworkinformation": True,
+            "add_employeebankdetails": True, "change_employeebankdetails": True,
+            "view_employeebankdetails": True,
+            "add_employeenote": True, "change_employeenote": True, "delete_employeenote": True,
+            "view_employeenote": True,
+            "add_policy": True, "change_policy": True, "delete_policy": True, "view_policy": True,
+            "add_bonuspoint": True, "change_bonuspoint": True, "view_bonuspoint": True,
+            "add_actiontype": True, "change_actiontype": True, "view_actiontype": True,
+            "add_disciplinaryaction": True, "change_disciplinaryaction": True, "delete_disciplinaryaction": True,
+            "view_disciplinaryaction": True,
+            "view_employeegeneralsetting": True,
+            "view_profileeditfeature": True,
+            "view_defaultaccessibility": True,
+            "view_ownprofile": True, "change_ownprofile": True,
+            "bulk_import_employee": True, "export_employee_data": True,
+            "add_company": True, "change_company": True, "delete_company": True,
+            "add_department": True, "change_department": True, "delete_department": True,
+            "add_jobposition": True, "change_jobposition": True, "delete_jobposition": True,
+            "add_jobrole": True, "change_jobrole": True, "delete_jobrole": True,
+            "add_worktype": True, "change_worktype": True, "delete_worktype": True,
+            "add_employeetype": True, "change_employeetype": True, "delete_employeetype": True,
+            "add_employeeshift": True, "change_employeeshift": True, "delete_employeeshift": True,
+            "add_employeeshiftday": True, "change_employeeshiftday": True, "delete_employeeshiftday": True,
+            "add_employeeshiftschedule": True, "change_employeeshiftschedule": True, "delete_employeeshiftschedule": True,
+            "add_rotatingworktype": True, "change_rotatingworktype": True, "delete_rotatingworktype": True,
+            "add_rotatingworktypeassign": True, "change_rotatingworktypeassign": True, "delete_rotatingworktypeassign": True,
+            "add_rotatingshift": True, "change_rotatingshift": True, "delete_rotatingshift": True,
+            "add_rotatingshiftassign": True, "change_rotatingshiftassign": True, "delete_rotatingshiftassign": True,
+            "add_worktyperequest": True, "change_worktyperequest": True, "delete_worktyperequest": True,
+            "approve_worktyperequest": True, "cancel_worktyperequest": True,
+            "add_shiftrequest": True, "change_shiftrequest": True, "delete_shiftrequest": True,
+            "approve_shiftrequest": True, "cancel_shiftrequest": True,
+            "add_shiftrequestcomment": True, "change_shiftrequestcomment": True, "delete_shiftrequestcomment": True,
+            "add_holidays": True, "change_holidays": True, "delete_holidays": True,
+            "add_companyleaves": True, "change_companyleaves": True, "delete_companyleaves": True,
+            "add_multipleapprovalcondition": True, "change_multipleapprovalcondition": True, "delete_multipleapprovalcondition": True,
+            "add_multipleapprovalmanagers": True, "change_multipleapprovalmanagers": True, "delete_multipleapprovalmanagers": True,
+            "add_announcement": True, "change_announcement": True, "delete_announcement": True,
+            "add_announcementcomment": True, "change_announcementcomment": True, "delete_announcementcomment": True,
+            "add_announcementview": True, "change_announcementview": True, "delete_announcementview": True,
+            "add_horillamailtemplate": True, "change_horillamailtemplate": True, "delete_horillamailtemplate": True,
+            # Attendance Core
+            "add_attendance": True, "change_attendance": True, "delete_attendance": True,
+            "add_attendanceactivity": True, "change_attendanceactivity": True, "delete_attendanceactivity": True,
+            "add_attendanceovertime": True, "change_attendanceovertime": True, "delete_attendanceovertime": True,
+            "add_batchattendance": True, "change_batchattendance": True, "delete_batchattendance": True,
+            "add_attendancelatecomeearlyout": True, "change_attendancelatecomeearlyout": True, "delete_attendancelatecomeearlyout": True,
+            "add_gracetime": True, "change_gracetime": True, "delete_gracetime": True,
+            "add_attendancegeneralsetting": True, "change_attendancegeneralsetting": True, "delete_attendancegeneralsetting": True,
+            "change_approveovertime": True, "change_validateattendance": True, "regularize_attendance": True,
+            # Leave Management
+            "add_leavetype": True, "change_leavetype": True, "delete_leavetype": True,
+            "add_availableleave": True, "change_availableleave": True, "delete_availableleave": True,
+            "add_leaverequest": True, "change_leaverequest": True, "delete_leaverequest": True,
+            "approve_leaverequest": True,
+            "add_leaverequestcomment": True, "change_leaverequestcomment": True, "delete_leaverequestcomment": True,
+            "add_leaverequestfile": True, "change_leaverequestfile": True, "delete_leaverequestfile": True,
+            "add_leaveallocationrequest": True, "change_leaveallocationrequest": True, "delete_leaveallocationrequest": True,
+            "add_compensatoryleaverequest": True, "change_compensatoryleaverequest": True, "delete_compensatoryleaverequest": True,
+            "add_restrictleave": True, "change_restrictleave": True, "delete_restrictleave": True,
+            # Biometrics & Security
+            "add_biometricdevices": True, "change_biometricdevices": True, "delete_biometricdevices": True,
+            "add_biometricemployees": True, "change_biometricemployees": True, "delete_biometricemployees": True,
+            "add_geofencing": True, "change_geofencing": True, "delete_geofencing": True,
+            "add_facedetection": True, "change_facedetection": True, "delete_facedetection": True,
+            "add_employeefacedetection": True, "change_employeefacedetection": True, "delete_employeefacedetection": True,
+            # Reports
+            "export_attendance_report": True,
+            # Payroll
+            "add_filingstatus": True, "change_filingstatus": True, "delete_filingstatus": True,
+            "add_contract": True, "change_contract": True, "delete_contract": True,
+            "add_allowance": True, "change_allowance": True, "delete_allowance": True,
+            "add_deduction": True, "change_deduction": True, "delete_deduction": True,
+            "add_payslip": True, "change_payslip": True, "delete_payslip": True,
+            "generate_bulk_payslip": True, "approve_payslip": True,
+            "add_loanaccount": True, "change_loanaccount": True, "delete_loanaccount": True,
+            "add_reimbursement": True, "change_reimbursement": True, "delete_reimbursement": True,
+            "view_salary_reports": True,
+            # Platform - Automations & Notifications
+            "add_mailautomation": True, "change_mailautomation": True, "delete_mailautomation": True,
+            "add_notification": True, "change_notification": True, "delete_notification": True,
+            # Platform - Audit (no delete)
+            "add_audittag": True, "change_audittag": True,
+            "add_historytrackingfields": True, "change_historytrackingfields": True,
+            # Platform - Documents (no delete for document itself)
+            "add_document": True, "change_document": True,
+            "add_documentrequest": True, "change_documentrequest": True, "delete_documentrequest": True,
+            "add_documentrequestassignment": True, "change_documentrequestassignment": True, "delete_documentrequestassignment": True,
+            # Talent - PHM Recruitment
+            "add_phmhiringrequest": True, "change_phmhiringrequest": True,
+            "add_phmpositionprep": True, "change_phmpositionprep": True, "delete_phmpositionprep": True,
+            "add_phmjobdescription": True, "change_phmjobdescription": True, "delete_phmjobdescription": True,
+            "add_phmidealcandidateprofile": True, "change_phmidealcandidateprofile": True, "delete_phmidealcandidateprofile": True,
+            "add_phminterviewquestionbank": True, "change_phminterviewquestionbank": True, "delete_phminterviewquestionbank": True,
+            "add_phmsourcingchannel": True, "change_phmsourcingchannel": True, "delete_phmsourcingchannel": True,
+            "add_phmpipelinestage": True, "change_phmpipelinestage": True, "delete_phmpipelinestage": True,
+            "add_phmrejectionreason": True, "change_phmrejectionreason": True, "delete_phmrejectionreason": True,
+            "add_phmcandidate": True, "change_phmcandidate": True,
+            "add_phmcandidatescreening": True, "change_phmcandidatescreening": True, "delete_phmcandidatescreening": True,
+            "add_phminterviewschedule": True, "change_phminterviewschedule": True, "delete_phminterviewschedule": True,
+            "add_phminterviewfeedback": True, "change_phminterviewfeedback": True, "delete_phminterviewfeedback": True,
+            "add_phmofferdetails": True, "change_phmofferdetails": True,
+            "add_phmhiringerrorflag": True, "change_phmhiringerrorflag": True, "delete_phmhiringerrorflag": True,
+            "add_phmhiringmastertemplate": True, "change_phmhiringmastertemplate": True, "delete_phmhiringmastertemplate": True,
+            "add_phmmasterprocessstep": True, "change_phmmasterprocessstep": True, "delete_phmmasterprocessstep": True,
+            "add_phmstepdependency": True, "change_phmstepdependency": True, "delete_phmstepdependency": True,
+            "add_phmrequeststeptracker": True, "change_phmrequeststeptracker": True, "delete_phmrequeststeptracker": True,
+            # Talent - PMS
+            "add_period": True, "change_period": True, "delete_period": True,
+            "add_keyresult": True, "change_keyresult": True, "delete_keyresult": True,
+            "add_objective": True, "change_objective": True,
+            "add_employeeobjective": True, "change_employeeobjective": True,
+            "add_feedback": True, "change_feedback": True,
+            # Talent - Onboarding
+            "add_onboardingstage": True, "change_onboardingstage": True, "delete_onboardingstage": True,
+            "add_onboardingtask": True, "change_onboardingtask": True, "delete_onboardingtask": True,
+            "add_candidatestage": True, "change_candidatestage": True, "delete_candidatestage": True,
+            "add_candidatetask": True, "change_candidatetask": True, "delete_candidatetask": True,
+            "add_onboardingportal": True, "change_onboardingportal": True,
+            # Talent - Offboarding
+            "add_offboarding": True, "change_offboarding": True,
+            "add_offboardingstage": True, "change_offboardingstage": True, "delete_offboardingstage": True,
+            "add_offboardingemployee": True, "change_offboardingemployee": True,
+            "add_resignationletter": True, "change_resignationletter": True,
+            "add_offboardingtask": True, "change_offboardingtask": True, "delete_offboardingtask": True,
+            "add_employeetask": True, "change_employeetask": True, "delete_employeetask": True,
+        },
+        "Employee": {
+            "view_ownprofile": True, "change_ownprofile": True,
+            "view_employee": True,
+            "view_policy": True,
+            "view_disciplinaryaction": True,
+            "view_bonuspoint": True,
+            "view_company": True, "view_department": True, "view_jobposition": True,
+            "view_worktype": True, "view_announcement": True, "view_holidays": True,
+            "view_employeeshiftschedule": True,
+            "add_shiftrequest": True, "view_shiftrequest": True, "cancel_shiftrequest": True,
+            "add_worktyperequest": True, "view_worktyperequest": True, "cancel_worktyperequest": True,
+            "add_shiftrequestcomment": True,
+            "add_announcementcomment": True, "add_announcementview": True,
+            # Attendance self-service
+            "view_attendance": True, "view_attendanceactivity": True,
+            "view_leavetype": True,
+            "view_leaverequest": True, "view_leaveallocationrequest": True,
+            "view_availableleave": True, "view_compensatoryleaverequest": True,
+            "add_leaverequest": True, "add_leaveallocationrequest": True, "add_compensatoryleaverequest": True,
+            "add_leaverequestcomment": True, "add_leaverequestfile": True,
+            "regularize_attendance": True,
+            # Payroll self-service
+            "view_payslip": True, "view_contract": True, "view_loanaccount": True,
+            "view_reimbursement": True, "add_reimbursement": True,
+            # Platform self-service
+            "view_notification": True,
+            "view_documentrequest": True, "view_documentrequestassignment": True,
+            "add_document": True, "change_document": True, "view_document": True,
+            # Talent self-service
+            "view_objective": True, "view_keyresult": True,
+            "view_employeeobjective": True, "change_employeeobjective": True,
+            "view_feedback": True, "add_feedback": True,
+            "add_resignationletter": True, "view_resignationletter": True,
+            "view_employeetask": True, "change_employeetask": True,
+            "view_phmcandidate": True, "view_phminterviewschedule": True,
+            "add_phminterviewfeedback": True, "change_phminterviewfeedback": True, "view_phminterviewfeedback": True,
+        },
+    }
+
+    for role_name, actions in role_defs.items():
+        existing = await db.execute(select(Role).options(selectinload(Role.permissions)).where(Role.name == role_name))
+        role = existing.scalar_one_or_none()
+        if not role:
             role = Role(name=role_name, description=f"Default {role_name} role", is_system=True)
-            perms = await db.execute(select(Permission))
-            if role_name == "Admin":
-                role.permissions = list(perms.scalars().all())
-            else:
-                role.permissions = [p for p in perms.scalars().all() if p.action in actions]
             db.add(role)
+            await db.flush()
+            await db.refresh(role, ["permissions"])
+        perms_result = await db.execute(select(Permission))
+        all_perms = list(perms_result.scalars().all())
+        if actions.get("all"):
+            role_perms = all_perms[:]
+        else:
+            role_perms = []
+            for p in all_perms:
+                action_key = p.action
+                if action_key in actions:
+                    role_perms.append(p)
+                else:
+                    for k in actions:
+                        if k and action_key.startswith(k + "_"):
+                            role_perms.append(p)
+                            break
+        role.permissions = role_perms
     await db.commit()

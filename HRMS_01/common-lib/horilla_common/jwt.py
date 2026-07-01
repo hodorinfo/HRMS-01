@@ -13,6 +13,8 @@ class TokenPayload(BaseModel):
     employee_id: Optional[int] = None
     is_superuser: bool = False
     is_staff: bool = False
+    permissions: list[str] = []
+    token_version: int = 0
     exp: Optional[int] = None
     type: str = "access"
 

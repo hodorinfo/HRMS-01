@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     permission_service_url: str = "http://permission-service:8000"
     core_service_url: str = "http://core-service:8000"
     identity_service_url: str = "http://identity-service:8000"
+    # Development fallback only. Override with INTERNAL_SERVICE_TOKEN env var in production.
+    internal_service_token: str = "dev-service-token"
 
 
 @lru_cache

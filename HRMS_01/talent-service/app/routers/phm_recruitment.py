@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from horilla_common.crud import create_crud_router
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_permission
 
 # Models
 from app.models import (
@@ -61,6 +61,7 @@ routers = [
 ]
 
 for prefix, model, create_schema, update_schema, read_schema, module_tag in routers:
+    model_name = model.__name__.lower()
     crud_router = create_crud_router(
         prefix=prefix,
         model=model,
@@ -69,6 +70,7 @@ for prefix, model, create_schema, update_schema, read_schema, module_tag in rout
         read_schema=read_schema,
         get_db=get_db,
         get_current_user=get_current_user,
-        module=module_tag
+        module=module_tag,
+        get_permission_dep=lambda action, mn=model_name: require_permission(f"talent.{action}_{mn}"),
     )
     router.include_router(crud_router)

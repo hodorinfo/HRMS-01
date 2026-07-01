@@ -14,7 +14,12 @@ class AttendanceCreate(BaseModel):
     attendance_clock_in: Optional[str] = None
     attendance_clock_out_date: Optional[date] = None
     attendance_clock_out: Optional[str] = None
+    attendance_worked_hour: Optional[str] = "00:00"
     minimum_hour: str = "00:00"
+    is_validate_request: bool = True
+    attendance_validated: bool = False
+    request_description: Optional[str] = None
+    request_type: Optional[str] = "create_request"
     is_holiday: bool = False
 
     @field_validator("attendance_date")
@@ -40,6 +45,10 @@ class AttendanceRead(HorillaSchema):
     attendance_clock_in: Optional[str] = None
     attendance_clock_out: Optional[str] = None
     attendance_worked_hour: Optional[str] = None
+    minimum_hour: Optional[str] = None
+    request_description: Optional[str] = None
+    request_type: Optional[str] = None
+    is_validate_request: bool = False
     attendance_validated: bool = False
     is_holiday: bool = False
     is_active: bool = True

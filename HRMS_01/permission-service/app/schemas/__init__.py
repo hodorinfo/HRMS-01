@@ -34,6 +34,9 @@ class UserRoleAssign(BaseModel):
     user_id: int
     role_ids: list[int]
 
+class RoleIdsBody(BaseModel):
+    role_ids: list[int]
+
 class PermissionCheckRequest(BaseModel):
     codename: str
     user_id: Optional[int] = None
