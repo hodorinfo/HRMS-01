@@ -30,19 +30,29 @@ class AttendanceCreate(BaseModel):
         return v
 
 class AttendanceUpdate(BaseModel):
+    employee_id: Optional[int] = None
+    attendance_date: Optional[date] = None
     shift_id: Optional[int] = None
+    work_type_id: Optional[int] = None
+    attendance_clock_in_date: Optional[date] = None
     attendance_clock_in: Optional[str] = None
+    attendance_clock_out_date: Optional[date] = None
     attendance_clock_out: Optional[str] = None
+    minimum_hour: Optional[str] = None
     attendance_validated: Optional[bool] = None
     attendance_overtime_approve: Optional[bool] = None
     request_description: Optional[str] = None
+    is_holiday: Optional[bool] = None
 
 class AttendanceRead(HorillaSchema):
     id: int
     employee_id: int
     attendance_date: date
     shift_id: Optional[int] = None
+    work_type_id: Optional[int] = None
+    attendance_clock_in_date: Optional[date] = None
     attendance_clock_in: Optional[str] = None
+    attendance_clock_out_date: Optional[date] = None
     attendance_clock_out: Optional[str] = None
     attendance_worked_hour: Optional[str] = None
     minimum_hour: Optional[str] = None

@@ -45,34 +45,69 @@ def create_crud_router(
         _perm=_view_perm,
     ):
         offset = (page - 1) * page_size
-        
-        from sqlalchemy import or_, String, Text, Integer, Boolean, cast
+
+        from sqlalchemy import or_, String, cast, Date
         base_query = select(model)
-        
+
+        SKIP_KEYS = {"page", "page_size", "group_by", "ordering"}
+
         for key, value in request.query_params.items():
-            if key not in ["page", "page_size"]:
-                if hasattr(model, key):
-                    column = getattr(model, key)
-                    # Convert types safely
-                    col_type_name = type(column.type).__name__
-                    if col_type_name == "Boolean" or (isinstance(value, str) and value.lower() in ["true", "false"]):
+            if key in SKIP_KEYS or not value:
+                continue
+
+            # --- Django-style lookup operators ---
+            if "__" in key:
+                field_name, operator = key.rsplit("__", 1)
+                if hasattr(model, field_name):
+                    column = getattr(model, field_name)
+                    col_type = type(column.type).__name__
+                    try:
+                        if operator == "gte":
+                            base_query = base_query.where(column >= value)
+                        elif operator == "lte":
+                            base_query = base_query.where(column <= value)
+                        elif operator == "icontains":
+                            base_query = base_query.where(cast(column, String).ilike(f"%{value}%"))
+                        elif operator == "in":
+                            ids = [v.strip() for v in value.split(",") if v.strip()]
+                            if col_type in ["Integer", "BigInteger", "SmallInteger"]:
+                                ids = [int(i) for i in ids if i.isdigit()]
+                            base_query = base_query.where(column.in_(ids))
+                        elif operator == "isnull":
+                            if value.lower() == "true":
+                                base_query = base_query.where(column.is_(None))
+                            else:
+                                base_query = base_query.where(column.isnot(None))
+                    except Exception:
+                        pass  # Skip malformed filter
+                continue
+
+            # --- Exact match on model columns ---
+            if hasattr(model, key):
+                column = getattr(model, key)
+                col_type_name = type(column.type).__name__
+                try:
+                    if col_type_name == "Boolean" or value.lower() in ["true", "false"]:
                         base_query = base_query.where(column == (value.lower() == "true"))
                     elif col_type_name in ["Integer", "BigInteger", "SmallInteger"]:
-                        if value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
+                        if value.lstrip("-").isdigit():
                             base_query = base_query.where(column == int(value))
                     elif col_type_name in ["String", "Text", "VARCHAR", "Enum"]:
                         base_query = base_query.where(func.lower(cast(column, String)) == value.lower())
                     else:
                         base_query = base_query.where(cast(column, String) == value)
-                elif key == "search" and value.strip():
-                    # Generic text search across all String/Text columns
-                    text_columns = [
-                        getattr(model, c.name) for c in model.__table__.columns
-                        if type(c.type).__name__ in ["String", "Text", "VARCHAR"]
-                    ]
-                    if text_columns:
-                        search_filters = [c.ilike(f"%{value}%") for c in text_columns]
-                        base_query = base_query.where(or_(*search_filters))
+                except Exception:
+                    pass
+                continue
+
+            # --- Generic search ---
+            if key == "search" and value.strip():
+                text_columns = [
+                    getattr(model, c.name) for c in model.__table__.columns
+                    if type(c.type).__name__ in ["String", "Text", "VARCHAR"]
+                ]
+                if text_columns:
+                    base_query = base_query.where(or_(*[c.ilike(f"%{value}%") for c in text_columns]))
 
         total = await db.scalar(select(func.count()).select_from(base_query.subquery()))
         result = await db.execute(base_query.offset(offset).limit(page_size))
